@@ -1,0 +1,49 @@
+# Local development — no image rebuild for PHP/Blade/Filament changes.
+#
+# Start stack + file sync:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+#
+# Frontend hot reload (pick one):
+#   npm run dev          ← on your PC (recommended on Windows)
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d vite
+#
+# If the UI looks dark/frozen and you are NOT running Vite, delete public/hot:
+#   npm run dev:stop
+
+services:
+  app:
+    volumes:
+      - .:/var/www/html
+      # Keep vendor, node_modules, and built assets from the image (faster than host copies).
+      - app-vendor:/var/www/html/vendor
+      - app-node-modules:/var/www/html/node_modules
+      - app-public-build:/var/www/html/public/build
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      # When Vite runs on the host (npm run dev):
+      VITE_DEV_SERVER_URL: "${VITE_DEV_SERVER_URL:-http://host.docker.internal:5173}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  vite:
+    profiles: []
+    image: node:22-bookworm-slim
+    working_dir: /var/www/html
+    ports:
+      - "${VITE_PORT:-5173}:5173"
+    volumes:
+      - .:/var/www/html
+      - vite-node-modules:/var/www/html/node_modules
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+    command: >
+      sh -c "npm ci && npm run dev -- --host 0.0.0.0"
+    networks:
+      - freedom
+
+volumes:
+  app-vendor:
+  app-node-modules:
+  app-public-build:
+  vite-node-modules:

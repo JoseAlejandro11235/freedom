@@ -1,0 +1,179 @@
+x-minio-credentials: &minio-credentials
+  MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+  MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+
+x-s3-env: &s3-env
+  FILESYSTEM_DISK: s3
+  AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minioadmin}
+  AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+  AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
+  AWS_BUCKET: ${AWS_BUCKET:-freedom}
+  AWS_USE_PATH_STYLE_ENDPOINT: "true"
+  AWS_ENDPOINT: http://minio:9000
+  AWS_URL: ${AWS_URL:-http://localhost:9000/freedom}
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: freedom-app
+    ports:
+      - "${APP_PORT:-8888}:80"
+    environment:
+      APP_NAME: "${APP_NAME:-Freedom}"
+      APP_ENV: "${APP_ENV:-local}"
+      APP_DEBUG: "${APP_DEBUG:-true}"
+      # Do not use host .env APP_URL here — it breaks Vite asset URLs in Docker.
+      APP_URL: "http://localhost:${APP_PORT:-8888}"
+      ASSET_URL: "http://localhost:${APP_PORT:-8888}"
+      APP_KEY: "${APP_KEY:-}"
+      LOG_CHANNEL: stderr
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: "${DB_DATABASE:-freedom}"
+      DB_USERNAME: "${DB_USERNAME:-freedom}"
+      DB_PASSWORD: "${DB_PASSWORD:-secret}"
+      SESSION_DRIVER: database
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+      RUN_MIGRATIONS: "${RUN_MIGRATIONS:-true}"
+      BRAND_LOGO_PATH: freedom.png
+      LIVEWIRE_TEMPORARY_FILE_UPLOAD_DISK: local
+      <<: *s3-env
+    volumes:
+      - storage:/var/www/html/storage
+    depends_on:
+      mysql:
+        condition: service_started
+      minio:
+        condition: service_started
+    networks:
+      - freedom
+
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: freedom-app
+    command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3", "--max-time=3600"]
+    environment:
+      APP_NAME: "${APP_NAME:-Freedom}"
+      APP_ENV: "${APP_ENV:-local}"
+      APP_DEBUG: "${APP_DEBUG:-false}"
+      # Do not use host .env APP_URL here — it breaks Vite asset URLs in Docker.
+      APP_URL: "http://localhost:${APP_PORT:-8888}"
+      ASSET_URL: "http://localhost:${APP_PORT:-8888}"
+      APP_KEY: "${APP_KEY:-}"
+      LOG_CHANNEL: stderr
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: "${DB_DATABASE:-freedom}"
+      DB_USERNAME: "${DB_USERNAME:-freedom}"
+      DB_PASSWORD: "${DB_PASSWORD:-secret}"
+      SESSION_DRIVER: database
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+      RUN_MIGRATIONS: "false"
+      BRAND_LOGO_PATH: freedom.png
+      LIVEWIRE_TEMPORARY_FILE_UPLOAD_DISK: local
+      <<: *s3-env
+    volumes:
+      - storage:/var/www/html/storage
+    depends_on:
+      mysql:
+        condition: service_started
+      minio:
+        condition: service_started
+      app:
+        condition: service_started
+    networks:
+      - freedom
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    environment:
+      <<: *minio-credentials
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - freedom
+
+  minio-init:
+    image: minio/mc:latest
+    profiles: ["setup"]
+    depends_on:
+      minio:
+        condition: service_started
+    environment:
+      <<: *minio-credentials
+      AWS_BUCKET: ${AWS_BUCKET:-freedom}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        until mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"; do
+          echo "Waiting for MinIO..."
+          sleep 2
+        done
+        mc mb "local/$$AWS_BUCKET" --ignore-existing
+        mc anonymous set download "local/$$AWS_BUCKET"
+        echo "Bucket $$AWS_BUCKET is ready."
+    networks:
+      - freedom
+    restart: "no"
+
+  mysql:
+    image: mysql:8.4
+    ports:
+      - "${FORWARD_DB_PORT:-33060}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "${DB_PASSWORD:-secret}"
+      MYSQL_DATABASE: "${DB_DATABASE:-freedom}"
+      MYSQL_USER: "${DB_USERNAME:-freedom}"
+      MYSQL_PASSWORD: "${DB_PASSWORD:-secret}"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD:-secret}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - freedom
+
+  # Vite is enabled in docker-compose.dev.yml. See DEV.md.
+  vite:
+    profiles: ["dev-vite"]
+    build:
+      context: .
+      dockerfile: docker/vite.Dockerfile
+    ports:
+      - "${VITE_PORT:-5173}:5173"
+    environment:
+      VITE_APP_NAME: "${APP_NAME:-Freedom}"
+    networks:
+      - freedom
+
+networks:
+  freedom:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  minio-data:
+  storage:
