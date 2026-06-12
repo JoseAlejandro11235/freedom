@@ -1,0 +1,11 @@
+{$APP_DOMAIN} {
+    encode zstd gzip
+
+    handle /{$AWS_BUCKET}/* {
+        reverse_proxy minio:9000
+    }
+
+    handle {
+        reverse_proxy app:80
+    }
+}

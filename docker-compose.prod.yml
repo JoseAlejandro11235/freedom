@@ -1,0 +1,68 @@
+# Production override for Hetzner or any single-server Docker deployment.
+#
+# Usage:
+#   cp .env.production.example .env
+#   # edit .env with real domain/passwords
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile setup up minio-init
+#
+# Requires Docker Compose v2.24+ for !reset.
+
+services:
+  app:
+    restart: unless-stopped
+    ports: !reset []
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_URL: "https://${APP_DOMAIN:?Set APP_DOMAIN in .env}"
+      ASSET_URL: "https://${APP_DOMAIN:?Set APP_DOMAIN in .env}"
+      LOG_LEVEL: "${LOG_LEVEL:-warning}"
+      SESSION_SECURE_COOKIE: "true"
+      AWS_ENDPOINT: http://minio:9000
+      AWS_URL: "https://${APP_DOMAIN:?Set APP_DOMAIN in .env}/${AWS_BUCKET:-freedom}"
+
+  queue:
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_URL: "https://${APP_DOMAIN:?Set APP_DOMAIN in .env}"
+      ASSET_URL: "https://${APP_DOMAIN:?Set APP_DOMAIN in .env}"
+      LOG_LEVEL: "${LOG_LEVEL:-warning}"
+      SESSION_SECURE_COOKIE: "true"
+      AWS_ENDPOINT: http://minio:9000
+      AWS_URL: "https://${APP_DOMAIN:?Set APP_DOMAIN in .env}/${AWS_BUCKET:-freedom}"
+
+  mysql:
+    restart: unless-stopped
+    ports: !reset []
+
+  minio:
+    restart: unless-stopped
+    ports: !reset []
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_started
+      minio:
+        condition: service_started
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      APP_DOMAIN: "${APP_DOMAIN:?Set APP_DOMAIN in .env}"
+      AWS_BUCKET: "${AWS_BUCKET:-freedom}"
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - freedom
+
+volumes:
+  caddy-data:
+  caddy-config:
