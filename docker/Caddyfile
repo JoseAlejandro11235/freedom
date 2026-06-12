@@ -1,4 +1,4 @@
-{$APP_DOMAIN} {
+{$APP_SCHEME:https}://{$APP_DOMAIN} {
     encode zstd gzip
 
     handle /{$AWS_BUCKET}/* {

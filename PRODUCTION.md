@@ -31,11 +31,23 @@ Set at least:
 
 ```env
 APP_DOMAIN=yourdomain.com
+APP_SCHEME=https
 DB_PASSWORD=strong-db-password
 MINIO_ROOT_USER=strong-minio-user
 MINIO_ROOT_PASSWORD=strong-minio-password
 ADMIN_EMAIL=admin@yourdomain.com
 ```
+
+For a temporary IP-only test without a domain, use:
+
+```env
+APP_DOMAIN=5.78.116.73
+APP_SCHEME=http
+APP_URL=http://5.78.116.73
+SESSION_SECURE_COOKIE=false
+```
+
+Do not include `http://` or `https://` in `APP_DOMAIN`.
 
 Generate the app key:
 
