@@ -135,7 +135,7 @@ class Product extends Model
 
     /**
      * @param  Builder<Product>  $query
-     * @return Builder<Product> 
+     * @return Builder<Product>
      */
     public function scopeLowStock(Builder $query): Builder
     {
