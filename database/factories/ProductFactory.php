@@ -33,6 +33,7 @@ class ProductFactory extends Factory
 
         return [
             'brand_id' => Brand::factory(),
+            'code' => fake()->unique()->bothify('PRD-####'),
             'name' => $name,
             'slug' => Str::slug($name).'-'.fake()->unique()->numerify('###'),
             'selling_price' => fake()->randomFloat(2, 50, 500),

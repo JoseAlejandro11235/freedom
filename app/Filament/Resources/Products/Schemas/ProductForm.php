@@ -60,6 +60,11 @@ class ProductForm
                                     ->preload()
                                     ->nullable(),
                             ]),
+                            TextInput::make('code')
+                                ->label('Código')
+                                ->maxLength(64)
+                                ->unique(ignoreRecord: true)
+                                ->nullable(),
                             TextInput::make('name')
                                 ->label('Nombre')
                                 ->required()

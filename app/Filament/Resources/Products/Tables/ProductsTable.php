@@ -28,6 +28,12 @@ class ProductsTable
                     ->searchable()
                     ->sortable()
                     ->limit(40),
+                TextColumn::make('code')
+                    ->label('Código')
+                    ->searchable()
+                    ->sortable()
+                    ->placeholder('—')
+                    ->toggleable(),
                 TextColumn::make('brand.name')->label('Marca')->sortable()->searchable(),
                 TextColumn::make('selling_price')
                     ->label('Precio de venta')
