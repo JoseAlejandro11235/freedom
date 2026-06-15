@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\InteractsWithLegacyIds;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -7,6 +8,8 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    use InteractsWithLegacyIds;
+
     public function up(): void
     {
         $this->ensureIndex('purchase_lines', 'purchase_lines_purchase_record_id_index', ['purchase_record_id']);
@@ -59,7 +62,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('products', function (Blueprint $table) {
-            $table->foreignUlid('size_id')->nullable()->after('slug')->constrained('sizes')->nullOnDelete();
+            $this->nullableForeignTo($table, 'size_id', 'sizes', 'slug');
         });
 
         DB::table('purchase_lines')

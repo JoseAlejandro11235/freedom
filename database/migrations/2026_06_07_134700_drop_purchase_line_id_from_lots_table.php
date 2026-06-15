@@ -1,11 +1,14 @@
 <?php
 
+use App\Support\InteractsWithLegacyIds;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    use InteractsWithLegacyIds;
+
     public function up(): void
     {
         Schema::table('lots', function (Blueprint $table) {
@@ -16,11 +19,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('lots', function (Blueprint $table) {
-            $table->foreignUlid('purchase_line_id')
-                ->nullable()
-                ->after('id')
-                ->constrained('purchase_lines')
-                ->nullOnDelete();
+            $this->nullableForeignTo($table, 'purchase_line_id', 'purchase_lines', 'id');
         });
     }
 };
