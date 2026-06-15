@@ -9,19 +9,19 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('purchases', function (Blueprint $table) {
-            $table->id();
+            $table->ulid('id')->primary();
             $table->string('purchase_id')->unique();
             $table->string('note')->nullable();
-            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignUlid('user_id')->nullable()->constrained()->nullOnDelete();
             $table->timestamps();
 
             $table->index('created_at');
         });
 
         Schema::create('purchase_lines', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('purchase_record_id')->constrained('purchases')->cascadeOnDelete();
-            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
+            $table->ulid('id')->primary();
+            $table->foreignUlid('purchase_record_id')->constrained('purchases')->cascadeOnDelete();
+            $table->foreignUlid('product_id')->constrained()->cascadeOnDelete();
             $table->unsignedInteger('quantity');
             $table->decimal('unit_cost', 10, 2)->nullable();
             $table->timestamps();
@@ -30,19 +30,19 @@ return new class extends Migration
         });
 
         Schema::create('sellings', function (Blueprint $table) {
-            $table->id();
+            $table->ulid('id')->primary();
             $table->string('selling_id')->unique();
             $table->string('note')->nullable();
-            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignUlid('user_id')->nullable()->constrained()->nullOnDelete();
             $table->timestamps();
 
             $table->index('created_at');
         });
 
         Schema::create('selling_lines', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('selling_record_id')->constrained('sellings')->cascadeOnDelete();
-            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
+            $table->ulid('id')->primary();
+            $table->foreignUlid('selling_record_id')->constrained('sellings')->cascadeOnDelete();
+            $table->foreignUlid('product_id')->constrained()->cascadeOnDelete();
             $table->unsignedInteger('quantity');
             $table->decimal('unit_price', 10, 2)->nullable();
             $table->timestamps();

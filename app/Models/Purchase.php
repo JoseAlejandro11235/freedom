@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
+use App\Enums\StockDocumentStatus;
 use App\Support\PurchaseTotals;
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Purchase extends Model
 {
+    use HasUlids;
+
     protected $fillable = [
         'purchase_id',
         'provider_id',
@@ -80,7 +84,7 @@ class Purchase extends Model
         return $this->belongsTo(PurchaseStatus::class, 'purchase_status_id');
     }
 
-    public function setStatusAttribute(PurchaseStatus|\App\Enums\StockDocumentStatus|string|int|null $status): void
+    public function setStatusAttribute(PurchaseStatus|StockDocumentStatus|string|null $status): void
     {
         $this->attributes['purchase_status_id'] = PurchaseStatus::resolve($status)->id;
     }
@@ -90,7 +94,7 @@ class Purchase extends Model
         return $this->belongsTo(Currency::class);
     }
 
-    public function setCurrencyAttribute(Currency|\App\Enums\Currency|string|int|null $currency): void
+    public function setCurrencyAttribute(Currency|\App\Enums\Currency|string|null $currency): void
     {
         $this->attributes['currency_id'] = Currency::resolve($currency)->id;
     }

@@ -9,9 +9,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('lots', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('purchase_line_id')->nullable()->constrained('purchase_lines')->nullOnDelete();
-            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
+            $table->ulid('id')->primary();
+            $table->foreignUlid('purchase_line_id')->nullable()->constrained('purchase_lines')->nullOnDelete();
+            $table->foreignUlid('product_id')->constrained()->cascadeOnDelete();
             $table->string('lot_number')->nullable()->unique();
             $table->unsignedInteger('quantity_received');
             $table->unsignedInteger('quantity_available');
@@ -23,7 +23,7 @@ return new class extends Migration
         });
 
         Schema::table('selling_lines', function (Blueprint $table) {
-            $table->foreignId('lot_id')->nullable()->after('product_id')->constrained('lots')->nullOnDelete();
+            $table->foreignUlid('lot_id')->nullable()->after('product_id')->constrained('lots')->nullOnDelete();
             $table->string('state')->default('pending')->after('lot_id');
         });
     }

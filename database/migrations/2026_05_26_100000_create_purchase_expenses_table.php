@@ -9,8 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('purchase_expenses', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('purchase_record_id')->constrained('purchases')->cascadeOnDelete();
+            $table->ulid('id')->primary();
+            $table->foreignUlid('purchase_record_id')->constrained('purchases')->cascadeOnDelete();
             $table->string('description');
             $table->decimal('amount', 10, 2);
             $table->unsignedInteger('sort_order')->default(0);

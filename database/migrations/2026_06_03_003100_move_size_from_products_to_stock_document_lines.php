@@ -14,7 +14,7 @@ return new class extends Migration
 
         Schema::table('purchase_lines', function (Blueprint $table) {
             $table->dropUnique('purchase_lines_purchase_record_id_product_id_unique');
-            $table->foreignId('size_id')->nullable()->after('product_id')->constrained('sizes')->nullOnDelete();
+            $table->foreignUlid('size_id')->nullable()->after('product_id')->constrained('sizes')->nullOnDelete();
             $table->unique(['purchase_record_id', 'product_id', 'size_id'], 'purchase_lines_document_product_size_unique');
         });
 
@@ -23,7 +23,7 @@ return new class extends Migration
 
         Schema::table('selling_lines', function (Blueprint $table) {
             $table->dropUnique('selling_lines_selling_record_id_product_id_unique');
-            $table->foreignId('size_id')->nullable()->after('product_id')->constrained('sizes')->nullOnDelete();
+            $table->foreignUlid('size_id')->nullable()->after('product_id')->constrained('sizes')->nullOnDelete();
             $table->unique(['selling_record_id', 'product_id', 'size_id'], 'selling_lines_document_product_size_unique');
         });
 
@@ -59,7 +59,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('products', function (Blueprint $table) {
-            $table->foreignId('size_id')->nullable()->after('slug')->constrained('sizes')->nullOnDelete();
+            $table->foreignUlid('size_id')->nullable()->after('slug')->constrained('sizes')->nullOnDelete();
         });
 
         DB::table('purchase_lines')

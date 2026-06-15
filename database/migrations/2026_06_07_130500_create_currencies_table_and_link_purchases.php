@@ -4,13 +4,14 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 return new class extends Migration
 {
     public function up(): void
     {
         Schema::create('currencies', function (Blueprint $table) {
-            $table->id();
+            $table->ulid('id')->primary();
             $table->string('code', 3)->unique();
             $table->string('name');
             $table->string('symbol', 8);
@@ -23,6 +24,7 @@ return new class extends Migration
 
         DB::table('currencies')->insert([
             [
+                'id' => (string) Str::ulid(),
                 'code' => 'PEN',
                 'name' => 'Soles',
                 'symbol' => 'S/',
@@ -32,6 +34,7 @@ return new class extends Migration
                 'updated_at' => $now,
             ],
             [
+                'id' => (string) Str::ulid(),
                 'code' => 'USD',
                 'name' => 'Dólares',
                 'symbol' => '$',
@@ -41,6 +44,7 @@ return new class extends Migration
                 'updated_at' => $now,
             ],
             [
+                'id' => (string) Str::ulid(),
                 'code' => 'EUR',
                 'name' => 'Euros',
                 'symbol' => '€',
@@ -52,7 +56,7 @@ return new class extends Migration
         ]);
 
         Schema::table('purchases', function (Blueprint $table) {
-            $table->foreignId('currency_id')->nullable()->after('note')->constrained('currencies')->nullOnDelete();
+            $table->foreignUlid('currency_id')->nullable()->after('note')->constrained('currencies')->nullOnDelete();
         });
 
         $baseCurrencyId = DB::table('currencies')->where('code', 'PEN')->value('id');

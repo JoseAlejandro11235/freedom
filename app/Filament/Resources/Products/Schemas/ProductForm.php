@@ -41,7 +41,7 @@ class ProductForm
                                             ->required()
                                             ->maxLength(255),
                                     ])
-                                    ->createOptionUsing(function (array $data): int {
+                                    ->createOptionUsing(function (array $data): string {
                                         return Brand::query()->create($data)->id;
                                     }),
                                 Select::make('category_id')

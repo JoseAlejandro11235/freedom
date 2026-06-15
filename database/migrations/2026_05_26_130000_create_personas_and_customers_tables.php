@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('personas', function (Blueprint $table) {
-            $table->id();
+            $table->ulid('id')->primary();
             $table->string('first_name')->nullable();
             $table->string('last_name')->nullable();
             $table->string('document_number')->nullable()->index();
@@ -19,14 +19,14 @@ return new class extends Migration
         });
 
         Schema::create('customers', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('persona_id')->nullable()->constrained('personas')->nullOnDelete();
+            $table->ulid('id')->primary();
+            $table->foreignUlid('persona_id')->nullable()->constrained('personas')->nullOnDelete();
             $table->string('code')->nullable()->unique();
             $table->timestamps();
         });
 
         Schema::table('users', function (Blueprint $table) {
-            $table->foreignId('customer_id')->nullable()->after('id')->constrained('customers')->nullOnDelete();
+            $table->foreignUlid('customer_id')->nullable()->after('id')->constrained('customers')->nullOnDelete();
         });
     }
 

@@ -62,18 +62,18 @@ trait ManagesStockDocumentLines
         $lotLine = null;
 
         if (array_key_exists('lot_line_id', $line) && $line['lot_line_id'] !== null && $line['lot_line_id'] !== '') {
-            $lotLine = LotLine::query()->with('purchaseLine')->find((int) $line['lot_line_id']);
+            $lotLine = LotLine::query()->with('purchaseLine')->find($line['lot_line_id']);
         }
 
         $attributes = [
-            'product_id' => (int) ($line['product_id'] ?? $lotLine?->product_id),
+            'product_id' => $line['product_id'] ?? $lotLine?->product_id,
             'quantity' => (int) $line['quantity'],
         ];
 
         $sizeId = $line['size_id'] ?? $lotLine?->purchaseLine?->size_id;
 
         if ($sizeId !== null && $sizeId !== '') {
-            $attributes['size_id'] = (int) $sizeId;
+            $attributes['size_id'] = $sizeId;
         }
 
         if (array_key_exists('unit_cost', $line) && $line['unit_cost'] !== null && $line['unit_cost'] !== '') {
@@ -85,11 +85,11 @@ trait ManagesStockDocumentLines
         }
 
         if (array_key_exists('lot_line_id', $line) && $line['lot_line_id'] !== null && $line['lot_line_id'] !== '') {
-            $attributes['lot_line_id'] = (int) $line['lot_line_id'];
+            $attributes['lot_line_id'] = $line['lot_line_id'];
             $attributes['lot_id'] = $lotLine?->lot_id;
             $attributes['state'] = SellingLineStatus::Assigned;
         } elseif (array_key_exists('lot_id', $line) && $line['lot_id'] !== null && $line['lot_id'] !== '') {
-            $attributes['lot_id'] = (int) $line['lot_id'];
+            $attributes['lot_id'] = $line['lot_id'];
             $attributes['state'] = SellingLineStatus::Assigned;
         } elseif (array_key_exists('state', $line)) {
             $attributes['state'] = SellingLineStatus::Pending;

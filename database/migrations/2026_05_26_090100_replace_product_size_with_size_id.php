@@ -11,7 +11,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('products', function (Blueprint $table) {
-            $table->foreignId('size_id')->nullable()->after('slug')->constrained()->nullOnDelete();
+            $table->foreignUlid('size_id')->nullable()->after('slug')->constrained()->nullOnDelete();
         });
 
         $names = DB::table('products')
@@ -32,7 +32,10 @@ return new class extends Migration
                 $suffix++;
             }
 
-            $sizeIdsByName[$name] = DB::table('sizes')->insertGetId([
+            $sizeIdsByName[$name] = (string) Str::ulid();
+
+            DB::table('sizes')->insert([
+                'id' => $sizeIdsByName[$name],
                 'name' => $name,
                 'slug' => $slug,
                 'sort_order' => 0,

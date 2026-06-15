@@ -4,16 +4,17 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 return new class extends Migration
 {
     public function up(): void
     {
         Schema::create('lot_lines', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('lot_id')->constrained('lots')->cascadeOnDelete();
-            $table->foreignId('purchase_line_id')->nullable()->constrained('purchase_lines')->nullOnDelete();
-            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
+            $table->ulid('id')->primary();
+            $table->foreignUlid('lot_id')->constrained('lots')->cascadeOnDelete();
+            $table->foreignUlid('purchase_line_id')->nullable()->constrained('purchase_lines')->nullOnDelete();
+            $table->foreignUlid('product_id')->constrained()->cascadeOnDelete();
             $table->unsignedInteger('quantity_received');
             $table->unsignedInteger('quantity_available');
             $table->decimal('unit_cost', 10, 2)->nullable();
@@ -23,7 +24,7 @@ return new class extends Migration
         });
 
         Schema::table('selling_lines', function (Blueprint $table) {
-            $table->foreignId('lot_line_id')
+            $table->foreignUlid('lot_line_id')
                 ->nullable()
                 ->after('lot_id')
                 ->constrained('lot_lines')
@@ -35,7 +36,10 @@ return new class extends Migration
             ->orderBy('id')
             ->get()
             ->each(function (object $lot): void {
-                $lotLineId = DB::table('lot_lines')->insertGetId([
+                $lotLineId = (string) Str::ulid();
+
+                DB::table('lot_lines')->insert([
+                    'id' => $lotLineId,
                     'lot_id' => $lot->id,
                     'purchase_line_id' => $lot->purchase_line_id,
                     'product_id' => $lot->product_id,

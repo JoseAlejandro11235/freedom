@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PurchaseExpense extends Model
 {
+    use HasUlids;
+
     protected $fillable = [
         'purchase_record_id',
         'purchase_expense_concept_id',

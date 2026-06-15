@@ -9,13 +9,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('products', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('brand_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('category_id')->nullable()->constrained()->nullOnDelete();
-            $table->string('name');
-            $table->string('slug')->unique();
+            $table->ulid('id')->primary();
+            $table->foreignUlid('brand_id')->nullable()->constrained()->cascadeOnDelete();
+            $table->foreignUlid('category_id')->nullable()->constrained()->nullOnDelete();
+            $table->string('name')->nullable();
+            $table->string('slug')->nullable()->unique();
             $table->string('size')->nullable();
-            $table->decimal('selling_price', 10, 2);
+            $table->decimal('selling_price', 10, 2)->nullable();
             $table->decimal('original_price', 10, 2)->nullable();
             $table->string('badge')->nullable();
             $table->boolean('exclusive_web')->default(false);

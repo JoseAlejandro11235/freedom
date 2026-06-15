@@ -53,11 +53,11 @@ class PurchaseForm
                         Select::make('currency_id')
                             ->label('Moneda')
                             ->options(Currency::options())
-                            ->default(fn (): int => Currency::base()->id)
+                            ->default(fn (): string => Currency::base()->id)
                             ->required()
                             ->native(false)
                             ->live()
-                            ->afterStateUpdated(function (int|string|null $state, Set $set): void {
+                            ->afterStateUpdated(function (?string $state, Set $set): void {
                                 if (Currency::resolve($state)->isBase()) {
                                     $set('exchange_rate', 1);
                                 }

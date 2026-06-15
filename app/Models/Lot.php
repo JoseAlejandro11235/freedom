@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Lot extends Model
 {
+    use HasUlids;
+
     protected $fillable = [
         'lot_number',
         'received_at',
@@ -39,7 +42,7 @@ class Lot extends Model
         });
     }
 
-    public static function refreshProductStock(int $productId): void
+    public static function refreshProductStock(string $productId): void
     {
         $quantity = LotLine::query()
             ->where('product_id', $productId)

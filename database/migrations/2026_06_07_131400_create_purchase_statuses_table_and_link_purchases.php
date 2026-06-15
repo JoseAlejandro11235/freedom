@@ -4,13 +4,14 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 return new class extends Migration
 {
     public function up(): void
     {
         Schema::create('purchase_statuses', function (Blueprint $table) {
-            $table->id();
+            $table->ulid('id')->primary();
             $table->string('code', 32)->unique();
             $table->string('name');
             $table->string('color')->default('gray');
@@ -22,6 +23,7 @@ return new class extends Migration
 
         DB::table('purchase_statuses')->insert([
             [
+                'id' => (string) Str::ulid(),
                 'code' => 'DRAFT',
                 'name' => 'Borrador',
                 'color' => 'gray',
@@ -30,6 +32,7 @@ return new class extends Migration
                 'updated_at' => $now,
             ],
             [
+                'id' => (string) Str::ulid(),
                 'code' => 'APPROVED',
                 'name' => 'Aprobado',
                 'color' => 'success',
@@ -38,6 +41,7 @@ return new class extends Migration
                 'updated_at' => $now,
             ],
             [
+                'id' => (string) Str::ulid(),
                 'code' => 'PAID',
                 'name' => 'Pagado',
                 'color' => 'info',
@@ -48,7 +52,7 @@ return new class extends Migration
         ]);
 
         Schema::table('purchases', function (Blueprint $table) {
-            $table->foreignId('purchase_status_id')->nullable()->after('purchase_id')->constrained('purchase_statuses')->nullOnDelete();
+            $table->foreignUlid('purchase_status_id')->nullable()->after('purchase_id')->constrained('purchase_statuses')->nullOnDelete();
         });
 
         $statusIds = DB::table('purchase_statuses')->pluck('id', 'code');

@@ -18,7 +18,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('lots', function (Blueprint $table) {
-            $table->foreignId('product_id')
+            $table->foreignUlid('product_id')
                 ->nullable()
                 ->after('id')
                 ->constrained()

@@ -47,7 +47,7 @@ class PurchaseTotals
 
     public static function normalizedExchangeRate(
         float|string|null $exchangeRate,
-        Currency|\App\Enums\Currency|string|int|null $currency = null,
+        Currency|\App\Enums\Currency|string|null $currency = null,
     ): float {
         $currency = Currency::resolve($currency);
 
@@ -62,7 +62,7 @@ class PurchaseTotals
 
     public static function totalInPen(
         float $total,
-        Currency|\App\Enums\Currency|string|int|null $currency,
+        Currency|\App\Enums\Currency|string|null $currency,
         float|string|null $exchangeRate,
     ): float {
         $currency = Currency::resolve($currency);
@@ -83,7 +83,7 @@ class PurchaseTotals
         );
     }
 
-    public static function formatMoney(float $amount, Currency|\App\Enums\Currency|string|int|null $currency = null): string
+    public static function formatMoney(float $amount, Currency|\App\Enums\Currency|string|null $currency = null): string
     {
         $currency = Currency::resolve($currency);
 

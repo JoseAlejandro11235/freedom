@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LotLine extends Model
 {
+    use HasUlids;
+
     protected $fillable = [
         'lot_id',
         'purchase_line_id',
@@ -28,12 +31,12 @@ class LotLine extends Model
     protected static function booted(): void
     {
         static::saved(function (LotLine $line): void {
-            Lot::refreshProductStock((int) $line->product_id);
+            Lot::refreshProductStock($line->product_id);
             $line->purchaseLine?->refreshPendingQuantity();
             $line->lot?->refreshTotalsFromLines();
 
             if ($line->wasChanged('product_id') && $line->getOriginal('product_id') !== null) {
-                Lot::refreshProductStock((int) $line->getOriginal('product_id'));
+                Lot::refreshProductStock($line->getOriginal('product_id'));
             }
 
             if ($line->wasChanged('purchase_line_id') && $line->getOriginal('purchase_line_id') !== null) {
@@ -44,7 +47,7 @@ class LotLine extends Model
         });
 
         static::deleted(function (LotLine $line): void {
-            Lot::refreshProductStock((int) $line->product_id);
+            Lot::refreshProductStock($line->product_id);
             $line->purchaseLine?->refreshPendingQuantity();
             $line->lot?->refreshTotalsFromLines();
         });

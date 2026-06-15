@@ -23,7 +23,7 @@ class CreateLot extends CreateRecord
 
         $data['lot_number'] = filled($data['lot_number'] ?? null)
             ? $data['lot_number']
-            : sprintf('LOT-%06d', $purchaseLine->id);
+            : 'LOT-'.strtoupper(substr($purchaseLine->id, -8));
         $data['received_at'] ??= now();
 
         return DB::transaction(function () use ($data, $lines): Model {

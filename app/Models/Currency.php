@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Currency extends Model
 {
+    use HasUlids;
+
     protected $fillable = [
         'code',
         'name',
@@ -39,7 +42,7 @@ class Currency extends Model
     }
 
     /**
-     * @return array<int, string>
+     * @return array<string, string>
      */
     public static function options(): array
     {
@@ -58,7 +61,7 @@ class Currency extends Model
             ?? static::query()->firstOrFail();
     }
 
-    public static function resolve(self|\App\Enums\Currency|string|int|null $currency): self
+    public static function resolve(self|\App\Enums\Currency|string|null $currency): self
     {
         if ($currency instanceof self) {
             return $currency;
@@ -68,16 +71,9 @@ class Currency extends Model
             $currency = $currency->value;
         }
 
-        if (is_numeric($currency)) {
-            $resolved = static::query()->find((int) $currency);
-
-            if ($resolved !== null) {
-                return $resolved;
-            }
-        }
-
         if (filled($currency)) {
-            $resolved = static::query()->where('code', (string) $currency)->first();
+            $resolved = static::query()->whereKey((string) $currency)->first()
+                ?? static::query()->where('code', (string) $currency)->first();
 
             if ($resolved !== null) {
                 return $resolved;
@@ -87,7 +83,7 @@ class Currency extends Model
         return static::base();
     }
 
-    public static function symbolFromFormState(int|string|null $currencyId): string
+    public static function symbolFromFormState(?string $currencyId): string
     {
         return static::resolve($currencyId)->symbol;
     }

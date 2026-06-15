@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use App\Enums\StockDocumentStatus;
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PurchaseStatus extends Model
 {
+    use HasUlids;
+
     public const DRAFT = 'DRAFT';
 
     public const APPROVED = 'APPROVED';
@@ -48,7 +52,7 @@ class PurchaseStatus extends Model
     }
 
     /**
-     * @return array<int, string>
+     * @return array<string, string>
      */
     public static function options(): array
     {
@@ -65,22 +69,22 @@ class PurchaseStatus extends Model
         return static::query()->where('code', strtoupper($code))->firstOrFail();
     }
 
-    public static function resolve(self|\App\Enums\StockDocumentStatus|string|int|null $status): self
+    public static function resolve(self|StockDocumentStatus|string|null $status): self
     {
         if ($status instanceof self) {
             return $status;
         }
 
-        if ($status instanceof \App\Enums\StockDocumentStatus) {
+        if ($status instanceof StockDocumentStatus) {
             $status = match ($status) {
-                \App\Enums\StockDocumentStatus::Draft => self::DRAFT,
-                \App\Enums\StockDocumentStatus::Confirmed => self::APPROVED,
-                \App\Enums\StockDocumentStatus::Cancelled => self::DRAFT,
+                StockDocumentStatus::Draft => self::DRAFT,
+                StockDocumentStatus::Confirmed => self::APPROVED,
+                StockDocumentStatus::Cancelled => self::DRAFT,
             };
         }
 
-        if (is_numeric($status)) {
-            $resolved = static::query()->find((int) $status);
+        if (filled($status)) {
+            $resolved = static::query()->whereKey((string) $status)->first();
 
             if ($resolved !== null) {
                 return $resolved;

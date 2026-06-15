@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('purchases', function (Blueprint $table) {
-            $table->foreignId('provider_id')
+            $table->foreignUlid('provider_id')
                 ->nullable()
                 ->after('purchase_id')
                 ->constrained('providers')
@@ -17,7 +17,7 @@ return new class extends Migration
         });
 
         Schema::table('sellings', function (Blueprint $table) {
-            $table->foreignId('customer_id')
+            $table->foreignUlid('customer_id')
                 ->nullable()
                 ->after('selling_id')
                 ->constrained('customers')
