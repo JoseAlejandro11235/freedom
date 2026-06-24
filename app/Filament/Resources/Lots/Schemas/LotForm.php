@@ -4,11 +4,14 @@ namespace App\Filament\Resources\Lots\Schemas;
 
 use App\Models\PurchaseStatus;
 use App\Models\PurchaseLine;
+use App\Support\LotPurchaseImporter;
+use Filament\Actions\Action;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
@@ -24,6 +27,9 @@ class LotForm
                 Section::make('Lote')
                     ->columnSpanFull()
                     ->columns(2)
+                    ->headerActions([
+                        self::importFromPurchaseAction(),
+                    ])
                     ->schema([
                         TextInput::make('lot_number')
                             ->label('Número de lote')
@@ -98,5 +104,48 @@ class LotForm
         $size = $line->size?->name !== null ? " · talla: {$line->size->name}" : '';
 
         return "{$line->purchase->purchase_id} · {$line->product->name}{$size} · pendiente: {$line->pending_quantity}";
+    }
+
+    protected static function importFromPurchaseAction(): Action
+    {
+        return Action::make('importFromPurchase')
+            ->label('Importar de compra')
+            ->icon('heroicon-o-arrow-down-on-square')
+            ->color('gray')
+            ->visible(fn (?object $record): bool => $record === null)
+            ->modalHeading('Importar líneas de una compra')
+            ->modalDescription('Selecciona una compra pagada con líneas pendientes. Se importarán todas sus líneas pendientes y reemplazarán las líneas actuales.')
+            ->modalSubmitActionLabel('Importar líneas')
+            ->schema([
+                Select::make('purchase_id')
+                    ->label('Compra')
+                    ->options(fn (): array => LotPurchaseImporter::options())
+                    ->searchable()
+                    ->native(false)
+                    ->required()
+                    ->placeholder('Selecciona una compra')
+                    ->helperText('Solo se muestran compras pagadas con líneas pendientes de recibir.'),
+            ])
+            ->action(function (array $data, Set $set): void {
+                $items = LotPurchaseImporter::pendingLineItems($data['purchase_id'] ?? null);
+
+                if ($items === []) {
+                    Notification::make()
+                        ->title('Sin líneas pendientes')
+                        ->body('La compra seleccionada no tiene líneas pendientes de recibir.')
+                        ->warning()
+                        ->send();
+
+                    return;
+                }
+
+                $set('lines', $items);
+
+                Notification::make()
+                    ->title('Líneas importadas')
+                    ->body(count($items).' línea(s) pendiente(s) importada(s).')
+                    ->success()
+                    ->send();
+            });
     }
 }

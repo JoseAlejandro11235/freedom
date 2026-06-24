@@ -7,25 +7,31 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ProductPreview extends Model
+class PurchaseLineImport extends Model
 {
     use HasUlids;
 
-    protected $table = 'products_preview';
+    protected $table = 'purchase_lineas_imports';
 
     protected $fillable = [
         'user_id',
         'row_number',
         'code',
-        'name',
-        'selling_price',
+        'description',
+        'quantity',
+        'unit_cost',
+        'product_id',
+        'product_name',
+        'is_duplicate',
         'validation_error',
     ];
 
     protected function casts(): array
     {
         return [
-            'selling_price' => 'decimal:2',
+            'quantity' => 'integer',
+            'unit_cost' => 'decimal:2',
+            'is_duplicate' => 'boolean',
         ];
     }
 
@@ -34,24 +40,24 @@ class ProductPreview extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
+    }
+
     public function isValid(): bool
     {
         return blank($this->validation_error);
     }
 
-    public function hasExistingProductConflict(): bool
+    public function isImportable(): bool
     {
-        return $this->validation_error === ProductImportService::ERROR_CODE_EXISTS_IN_PRODUCTS;
-    }
-
-    public function canBeRemovedFromPreview(): bool
-    {
-        return filled($this->validation_error);
+        return $this->isValid() && filled($this->product_id);
     }
 
     /**
-     * @param  Builder<ProductPreview>  $query
-     * @return Builder<ProductPreview>
+     * @param  Builder<PurchaseLineImport>  $query
+     * @return Builder<PurchaseLineImport>
      */
     public function scopeForUser(Builder $query, User|string $user): Builder
     {

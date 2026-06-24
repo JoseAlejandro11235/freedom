@@ -3,11 +3,10 @@
 namespace App\Services;
 
 use App\Models\Product;
-use App\Models\ProductPreview;
+use App\Models\PurchaseLineImport;
 use App\Models\User;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -16,124 +15,11 @@ use OpenSpout\Common\Entity\Cell;
 use OpenSpout\Common\Entity\Cell\FormulaCell;
 use OpenSpout\Reader\XLSX\Reader;
 
-class ProductImportService
+class PurchaseLineImportService
 {
     public const ERROR_CODE_REQUIRED = 'El código es obligatorio.';
 
-    public const ERROR_NAME_REQUIRED = 'La descripción es obligatoria.';
-
-    public const ERROR_DUPLICATE_IN_FILE = 'El código está duplicado en el archivo.';
-
-    public const ERROR_CODE_EXISTS_IN_PRODUCTS = 'El código ya existe en productos.';
-
-    /**
-     * @return array{created: int}
-     */
-    public function commit(User|string $user): array
-    {
-        $userId = $user instanceof User ? $user->id : $user;
-
-        $previewRows = ProductPreview::query()
-            ->forUser($userId)
-            ->orderBy('row_number')
-            ->get();
-
-        if ($previewRows->isEmpty()) {
-            throw ValidationException::withMessages([
-                'file' => 'No hay productos en la vista previa para importar.',
-            ]);
-        }
-
-        $invalidRows = $previewRows->filter(fn (ProductPreview $row): bool => ! $row->isValid());
-
-        if ($invalidRows->isNotEmpty()) {
-            throw ValidationException::withMessages([
-                'file' => 'Corrige los errores de la vista previa antes de confirmar la importación.',
-            ]);
-        }
-
-        $created = 0;
-
-        DB::transaction(function () use ($previewRows, &$created): void {
-            foreach ($previewRows as $previewRow) {
-                $this->createImportedProduct($previewRow->code, $previewRow->name, $previewRow->selling_price);
-
-                $created++;
-            }
-
-            ProductPreview::query()
-                ->whereIn('id', $previewRows->pluck('id'))
-                ->delete();
-        });
-
-        return ['created' => $created];
-    }
-
-    public function clearForUser(User|string $user): void
-    {
-        ProductPreview::query()
-            ->forUser($user)
-            ->delete();
-    }
-
-    public function deletePreviewRow(User|string $user, string $previewId): void
-    {
-        $userId = $user instanceof User ? $user->id : $user;
-
-        ProductPreview::query()
-            ->forUser($userId)
-            ->whereKey($previewId)
-            ->delete();
-
-        $this->revalidatePreviewForUser($user);
-    }
-
-    public function revalidatePreviewForUser(User|string $user): void
-    {
-        $userId = $user instanceof User ? $user->id : $user;
-
-        $existingCodes = Product::query()
-            ->whereNotNull('code')
-            ->pluck('code')
-            ->map(fn (string $code): string => $this->normalizeCode($code))
-            ->all();
-
-        $seenCodes = [];
-
-        $rows = ProductPreview::query()
-            ->forUser($userId)
-            ->orderBy('row_number')
-            ->get();
-
-        foreach ($rows as $row) {
-            $code = $this->normalizeCode($row->code);
-            $name = trim($row->name);
-
-            $validationError = match (true) {
-                blank($code) => self::ERROR_CODE_REQUIRED,
-                blank($name) => self::ERROR_NAME_REQUIRED,
-                isset($seenCodes[$code]) => self::ERROR_DUPLICATE_IN_FILE,
-                in_array($code, $existingCodes, true) => self::ERROR_CODE_EXISTS_IN_PRODUCTS,
-                default => null,
-            };
-
-            if ($validationError === null) {
-                $seenCodes[$code] = true;
-            }
-
-            if ($row->validation_error !== $validationError) {
-                $row->update(['validation_error' => $validationError]);
-            }
-        }
-    }
-
-    public function userHasInvalidPreviewRows(User|string $user): bool
-    {
-        return ProductPreview::query()
-            ->forUser($user)
-            ->whereNotNull('validation_error')
-            ->exists();
-    }
+    public const ERROR_PRODUCT_NOT_FOUND = 'No existe un producto con ese código.';
 
     public function stageFromFile(User $user, mixed $uploadedFile): int
     {
@@ -159,42 +45,44 @@ class ProductImportService
             ]);
         }
 
-        $existingCodes = Product::query()
+        $productsByCode = Product::query()
             ->whereNotNull('code')
-            ->pluck('code')
-            ->map(fn (string $code): string => $this->normalizeCode($code))
-            ->all();
-
-        $seenCodes = [];
+            ->get(['id', 'code', 'name'])
+            ->keyBy(fn (Product $product): string => $this->normalizeCode((string) $product->code));
 
         $this->clearForUser($user);
 
+        $seenCodes = [];
         $rowNumber = 0;
 
         foreach ($parsedRows as $parsedRow) {
             $rowNumber++;
 
             $code = $this->normalizeCode($parsedRow['code']);
-            $name = trim($parsedRow['name']);
+            $product = $code !== '' ? $productsByCode->get($code) : null;
 
-            $validationError = match (true) {
-                blank($code) => self::ERROR_CODE_REQUIRED,
-                blank($name) => self::ERROR_NAME_REQUIRED,
-                isset($seenCodes[$code]) => self::ERROR_DUPLICATE_IN_FILE,
-                in_array($code, $existingCodes, true) => self::ERROR_CODE_EXISTS_IN_PRODUCTS,
-                default => null,
-            };
+            $isDuplicate = $code !== '' && isset($seenCodes[$code]);
 
-            if ($validationError === null) {
+            if ($code !== '') {
                 $seenCodes[$code] = true;
             }
 
-            ProductPreview::query()->create([
+            $validationError = match (true) {
+                $code === '' => self::ERROR_CODE_REQUIRED,
+                $product === null => self::ERROR_PRODUCT_NOT_FOUND,
+                default => null,
+            };
+
+            PurchaseLineImport::query()->create([
                 'user_id' => $user->id,
                 'row_number' => $rowNumber,
                 'code' => $code,
-                'name' => $name,
-                'selling_price' => $parsedRow['selling_price'],
+                'description' => $parsedRow['description'],
+                'quantity' => $parsedRow['quantity'],
+                'unit_cost' => $parsedRow['unit_cost'],
+                'product_id' => $product?->id,
+                'product_name' => $product?->name,
+                'is_duplicate' => $isDuplicate,
                 'validation_error' => $validationError,
             ]);
         }
@@ -202,44 +90,67 @@ class ProductImportService
         return $rowNumber;
     }
 
-    private function createImportedProduct(string $code, string $name, mixed $sellingPrice): void
+    public function clearForUser(User|string $user): void
     {
-        $idColumnType = Schema::getColumnType('products', 'id');
-
-        if (in_array($idColumnType, ['bigint', 'integer', 'int'], true)) {
-            DB::table('products')->insert([
-                'code' => $code,
-                'name' => $name,
-                'selling_price' => $sellingPrice,
-                'slug' => $this->generateUniqueSlug($name),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            return;
-        }
-
-        Product::query()->create([
-            'code' => $code,
-            'name' => $name,
-            'selling_price' => $sellingPrice,
-        ]);
-    }
-
-    private function generateUniqueSlug(string $name): string
-    {
-        $base = Str::slug($name) ?: 'product';
-        $slug = $base;
-
-        while (DB::table('products')->where('slug', $slug)->exists()) {
-            $slug = $base.'-'.Str::lower(Str::random(4));
-        }
-
-        return $slug;
+        PurchaseLineImport::query()
+            ->forUser($user)
+            ->delete();
     }
 
     /**
-     * @return list<array{code: string, name: string, selling_price: ?string}>
+     * @return Collection<int, PurchaseLineImport>
+     */
+    public function rowsForUser(User|string $user): Collection
+    {
+        return PurchaseLineImport::query()
+            ->forUser($user)
+            ->orderBy('row_number')
+            ->get();
+    }
+
+    public function duplicateCountForUser(User|string $user): int
+    {
+        return PurchaseLineImport::query()
+            ->forUser($user)
+            ->where('is_duplicate', true)
+            ->count();
+    }
+
+    public function notFoundCountForUser(User|string $user): int
+    {
+        return PurchaseLineImport::query()
+            ->forUser($user)
+            ->whereNull('product_id')
+            ->count();
+    }
+
+    /**
+     * Build the repeater state used to replace the purchase lines.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public function toRepeaterItems(User|string $user): array
+    {
+        $items = [];
+
+        foreach ($this->rowsForUser($user) as $row) {
+            if (! $row->isImportable()) {
+                continue;
+            }
+
+            $items[(string) Str::uuid()] = [
+                'product_id' => $row->product_id,
+                'size_id' => null,
+                'quantity' => $row->quantity !== null && $row->quantity > 0 ? $row->quantity : 1,
+                'unit_cost' => $row->unit_cost,
+            ];
+        }
+
+        return $items;
+    }
+
+    /**
+     * @return list<array{code: string, description: string, quantity: ?int, unit_cost: ?string}>
      */
     public function parseFile(string $absolutePath): array
     {
@@ -262,7 +173,8 @@ class ProductImportService
         $rows = [];
         $codeIndex = 0;
         $nameIndex = 1;
-        $priceIndex = 2;
+        $quantityIndex = 2;
+        $priceIndex = 3;
         $isFirstRow = true;
         $lastResolvedCode = null;
 
@@ -285,29 +197,33 @@ class ProductImportService
                         );
                         $codeIndex = array_search('codigo', $headers, true);
                         $nameIndex = array_search('descripcion', $headers, true);
-                        $priceIndex = array_search('precio_venta', $headers, true);
+                        $quantityIndex = array_search('cantidad', $headers, true);
+                        $priceIndex = array_search('precio', $headers, true);
                         $hasHeaderRow = $codeIndex !== false && $nameIndex !== false;
                         $isFirstRow = false;
 
                         if ($hasHeaderRow) {
-                            $priceIndex = $priceIndex !== false ? $priceIndex : 2;
+                            $quantityIndex = $quantityIndex !== false ? $quantityIndex : 2;
+                            $priceIndex = $priceIndex !== false ? $priceIndex : 3;
 
                             continue;
                         }
 
                         $codeIndex = 0;
                         $nameIndex = 1;
-                        $priceIndex = 2;
+                        $quantityIndex = 2;
+                        $priceIndex = 3;
                     }
 
                     $code = $this->resolveCode(
                         trim($values[$codeIndex] ?? ''),
                         $lastResolvedCode,
                     );
-                    $name = trim($values[$nameIndex] ?? '');
-                    $sellingPrice = $this->normalizePrice($values[$priceIndex] ?? '');
+                    $description = trim($values[$nameIndex] ?? '');
+                    $quantity = $this->normalizeQuantity($values[$quantityIndex] ?? '');
+                    $unitCost = $this->normalizePrice($values[$priceIndex] ?? '');
 
-                    if ($code === '' && $name === '') {
+                    if ($code === '' && $description === '') {
                         continue;
                     }
 
@@ -317,8 +233,9 @@ class ProductImportService
 
                     $rows[] = [
                         'code' => $code,
-                        'name' => $name,
-                        'selling_price' => $sellingPrice,
+                        'description' => $description,
+                        'quantity' => $quantity,
+                        'unit_cost' => $unitCost,
                     ];
                 }
 
@@ -454,9 +371,27 @@ class ProductImportService
         return match ($header) {
             'codigo', 'code', 'cod' => 'codigo',
             'descripcion', 'description', 'nombre', 'name' => 'descripcion',
-            'precio venta', 'precio_venta', 'precio de venta', 'selling price', 'selling_price', 'sale price', 'price' => 'precio_venta',
+            'cantidad', 'cant', 'quantity', 'qty' => 'cantidad',
+            'precio', 'precio compra', 'precio_compra', 'precio de compra', 'costo', 'costo unitario', 'unit cost', 'cost', 'price' => 'precio',
             default => $header,
         };
+    }
+
+    private function normalizeQuantity(string $quantity): ?int
+    {
+        $quantity = trim($quantity);
+
+        if ($quantity === '' || str_starts_with($quantity, '=')) {
+            return null;
+        }
+
+        $quantity = str_replace([' ', ','], '', $quantity);
+
+        if (! is_numeric($quantity)) {
+            return null;
+        }
+
+        return max(0, (int) round((float) $quantity));
     }
 
     private function normalizePrice(string $price): ?string
@@ -467,7 +402,7 @@ class ProductImportService
             return null;
         }
 
-        $price = str_replace(['S/', 's/', 'S/.', 's/.', ' '], '', $price);
+        $price = str_replace(['S/', 's/', 'S/.', 's/.', '$', ' '], '', $price);
         $price = str_replace(',', '.', $price);
 
         if (! is_numeric($price)) {

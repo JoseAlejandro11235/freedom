@@ -33,9 +33,9 @@ class ProductImportTest extends TestCase
         $path = Storage::disk('local')->path('imports/products/test.xlsx');
 
         ProductImportXlsxFactory::create($path, [
-            ['CODIGO', 'DESCRIPCION'],
-            ['201', 'Cartera TH Blanca'],
-            ['202', 'Labial bebe'],
+            ['CODIGO', 'DESCRIPCION', 'PRECIO VENTA'],
+            ['201', 'Cartera TH Blanca', 144.80],
+            ['202', 'Labial bebe', 52.21],
         ]);
 
         $service = app(ProductImportService::class);
@@ -47,6 +47,7 @@ class ProductImportTest extends TestCase
             'user_id' => $user->id,
             'code' => '201',
             'name' => 'Cartera TH Blanca',
+            'selling_price' => 144.80,
             'validation_error' => null,
         ]);
         $this->assertDatabaseCount('products', 0);
@@ -136,6 +137,7 @@ class ProductImportTest extends TestCase
             'row_number' => 1,
             'code' => '201',
             'name' => 'Cartera TH Blanca',
+            'selling_price' => 144.80,
         ]);
 
         $result = app(ProductImportService::class)->commit($user);
@@ -146,7 +148,7 @@ class ProductImportTest extends TestCase
             'brand_id' => null,
             'code' => '201',
             'name' => 'Cartera TH Blanca',
-            'selling_price' => null,
+            'selling_price' => 144.80,
         ]);
         $this->assertDatabaseCount('products_preview', 0);
     }

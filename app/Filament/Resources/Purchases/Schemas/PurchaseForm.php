@@ -6,16 +6,24 @@ use App\Filament\Schemas\PurchaseOtherExpensesSchema;
 use App\Filament\Schemas\StockDocumentLinesSchema;
 use App\Models\Currency;
 use App\Models\Provider;
+use App\Models\PurchaseLineImport;
+use App\Services\PurchaseLineImportService;
 use App\Services\StockDocumentService;
 use App\Support\PurchaseTotals;
+use Filament\Actions\Action;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Components\View;
+use Filament\Schemas\Components\Wizard\Step;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 
 class PurchaseForm
 {
@@ -95,6 +103,9 @@ class PurchaseForm
                     ]),
                 Section::make('Líneas')
                     ->columnSpanFull()
+                    ->headerActions([
+                        self::importLinesAction(),
+                    ])
                     ->schema(StockDocumentLinesSchema::repeater(
                         'unit_cost',
                         'Costo unitario',
@@ -130,5 +141,82 @@ class PurchaseForm
                             ->extraAttributes(['class' => 'text-lg font-semibold']),
                     ]),
             ]);
+    }
+
+    protected static function importLinesAction(): Action
+    {
+        return Action::make('importPurchaseLines')
+            ->label('Importar líneas')
+            ->icon('heroicon-o-arrow-up-tray')
+            ->color('gray')
+            ->visible(fn (?object $record): bool => $record === null || $record->isDraft())
+            ->modalHeading('Importar líneas')
+            ->modalDescription('Sube un archivo Excel (.xlsx) con las columnas CODIGO, DESCRIPCION, CANTIDAD y PRECIO. Las líneas actuales serán reemplazadas.')
+            ->modalWidth(Width::SevenExtraLarge)
+            ->closeModalByClickingAway(false)
+            ->steps([
+                Step::make('Archivo')
+                    ->description('Sube el archivo Excel (.xlsx).')
+                    ->schema([
+                        FileUpload::make('file')
+                            ->label('Archivo Excel')
+                            ->disk('local')
+                            ->directory('imports/purchase-lines')
+                            ->acceptedFileTypes([
+                                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                            ])
+                            ->helperText('Solo archivos .xlsx. Columnas esperadas: CODIGO, DESCRIPCION, CANTIDAD y PRECIO.')
+                            ->required(),
+                    ])
+                    ->afterValidation(function (Get $get, PurchaseLineImportService $importService): void {
+                        $importService->stageFromFile(
+                            auth()->user(),
+                            $get('file'),
+                        );
+                    }),
+                Step::make('Vista previa')
+                    ->description('Revisa las líneas antes de reemplazar las actuales.')
+                    ->schema([
+                        View::make('filament.purchases.line-import-preview')
+                            ->viewData(function (PurchaseLineImportService $importService): array {
+                                $rows = $importService->rowsForUser(auth()->user());
+
+                                return [
+                                    'rows' => $rows,
+                                    'duplicateCount' => $rows->where('is_duplicate', true)->count(),
+                                    'notFoundCount' => $rows->whereNull('product_id')->count(),
+                                    'importableCount' => $rows->filter(fn (PurchaseLineImport $row): bool => $row->isImportable())->count(),
+                                ];
+                            }),
+                    ]),
+            ])
+            ->modalSubmitAction(fn (Action $action): Action => $action->label('Importar líneas'))
+            ->modalCancelAction(function (Action $action, PurchaseLineImportService $importService): Action {
+                return $action->action(function () use ($importService): void {
+                    $importService->clearForUser(auth()->user());
+                });
+            })
+            ->action(function (PurchaseLineImportService $importService, Set $set): void {
+                $items = $importService->toRepeaterItems(auth()->user());
+                $importService->clearForUser(auth()->user());
+
+                if ($items === []) {
+                    Notification::make()
+                        ->title('No se importaron líneas')
+                        ->body('Ningún código del archivo coincide con un producto existente.')
+                        ->warning()
+                        ->send();
+
+                    return;
+                }
+
+                $set('lines', $items);
+
+                Notification::make()
+                    ->title('Líneas importadas')
+                    ->body(count($items).' línea(s) importada(s).')
+                    ->success()
+                    ->send();
+            });
     }
 }

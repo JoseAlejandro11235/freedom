@@ -6,6 +6,7 @@
           <th class="px-3 py-2 text-start text-sm font-medium text-gray-700 dark:text-gray-200">#</th>
           <th class="px-3 py-2 text-start text-sm font-medium text-gray-700 dark:text-gray-200">Código</th>
           <th class="px-3 py-2 text-start text-sm font-medium text-gray-700 dark:text-gray-200">Descripción</th>
+          <th class="px-3 py-2 text-end text-sm font-medium text-gray-700 dark:text-gray-200">Precio venta</th>
           <th class="px-3 py-2 text-start text-sm font-medium text-gray-700 dark:text-gray-200">Estado</th>
           <th class="px-3 py-2 text-end text-sm font-medium text-gray-700 dark:text-gray-200"></th>
         </tr>
@@ -27,6 +28,9 @@
               {{ $row->code }}
             </td>
             <td class="px-3 py-2 text-sm text-gray-950 dark:text-white">{{ $row->name }}</td>
+            <td class="px-3 py-2 text-end text-sm text-gray-950 dark:text-white">
+              {{ $row->selling_price !== null ? 'S/ '.number_format((float) $row->selling_price, 2) : '-' }}
+            </td>
             <td class="px-3 py-2 text-sm">
               @if ($row->validation_error)
                 <span class="font-medium text-danger-600 dark:text-danger-400">{{ $row->validation_error }}</span>
@@ -51,7 +55,7 @@
           </tr>
         @empty
           <tr>
-            <td colspan="5" class="px-3 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+            <td colspan="6" class="px-3 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
               No hay filas en la vista previa.
             </td>
           </tr>
