@@ -59,7 +59,6 @@ class SellingForm
                     ->schema(StockDocumentLinesSchema::repeater(
                         'unit_price',
                         'Precio unitario',
-                        withLotSelection: true,
                     )),
             ]);
     }

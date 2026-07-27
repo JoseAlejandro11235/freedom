@@ -20,26 +20,32 @@ class InventoryTest extends TestCase
         $this->seed(RolesAndPermissionsSeeder::class);
     }
 
-    public function test_out_of_stock_products_are_hidden_from_homepage_sections(): void
+    public function test_out_of_stock_products_still_appear_on_homepage_sections(): void
     {
         $brand = Brand::factory()->create();
 
-        Product::factory()->for($brand)->flashSale()->create([
+        Product::factory()->for($brand)->featured()->create([
+            'name' => 'Out of stock featured',
             'stock_quantity' => 0,
             'track_inventory' => true,
+            'is_published' => true,
         ]);
 
-        Product::factory()->for($brand)->flashSale()->create([
+        Product::factory()->for($brand)->featured()->create([
+            'name' => 'In stock featured',
             'stock_quantity' => 5,
             'track_inventory' => true,
+            'is_published' => true,
         ]);
 
         $visible = Product::query()
-            ->forHomepageSection(HomepageSection::FlashSale)
+            ->forHomepageSection(HomepageSection::Featured)
+            ->orderBy('name')
             ->get();
 
-        $this->assertCount(1, $visible);
-        $this->assertSame(5, $visible->first()->stock_quantity);
+        $this->assertCount(2, $visible);
+        $this->assertFalse($visible->firstWhere('name', 'Out of stock featured')->isInStock());
+        $this->assertTrue($visible->firstWhere('name', 'In stock featured')->isInStock());
     }
 
     public function test_product_without_inventory_tracking_is_always_in_stock(): void

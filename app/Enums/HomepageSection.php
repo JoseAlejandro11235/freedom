@@ -5,15 +5,15 @@ namespace App\Enums;
 enum HomepageSection: string
 {
     case None = 'none';
-    case FlashSale = 'flash_sale';
-    case ForHim = 'for_him';
+    case Featured = 'featured';
+    case NewArrivals = 'new_arrivals';
 
     public function label(): string
     {
         return match ($this) {
             self::None => 'Catálogo general',
-            self::FlashSale => 'Inicio — Ofertas 24 h',
-            self::ForHim => 'Inicio — Para él',
+            self::Featured => 'Inicio — Destacados',
+            self::NewArrivals => 'Inicio — Novedades',
         };
     }
 

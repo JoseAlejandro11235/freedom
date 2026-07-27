@@ -1,4 +1,5 @@
 import { LucideIcon } from 'lucide-react';
+import type { CartSummary, StorefrontNavItem } from '@/types/sentua';
 
 export interface Auth {
     user: User;
@@ -27,6 +28,12 @@ export interface SharedData {
     mediaBaseUrl?: string;
     quote: { message: string; author: string };
     auth: Auth;
+    cart: CartSummary;
+    navigation: StorefrontNavItem[];
+    flash?: {
+        success?: string | null;
+        error?: string | null;
+    };
     [key: string]: unknown;
 }
 

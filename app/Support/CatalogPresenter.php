@@ -16,7 +16,7 @@ class CatalogPresenter
 
         return [
             'id' => (string) $product->id,
-            'brand' => $product->brand->name,
+            'brand' => $product->brand?->name ?? '',
             'name' => $product->name,
             'size' => null,
             'price' => (float) $product->selling_price,
@@ -39,7 +39,7 @@ class CatalogPresenter
     {
         return [
             'name' => $category->name,
-            'href' => $category->href ?: '#',
+            'href' => route('catalog', ['category' => $category->slug]),
             'image' => $category->imageUrl() ?? '',
         ];
     }

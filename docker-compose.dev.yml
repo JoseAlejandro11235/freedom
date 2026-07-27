@@ -14,10 +14,10 @@ services:
   app:
     volumes:
       - .:/var/www/html
-      # Keep vendor, node_modules, and built assets from the image (faster than host copies).
+      # Keep vendor and node_modules from the image (faster than host copies).
       - app-vendor:/var/www/html/vendor
       - app-node-modules:/var/www/html/node_modules
-      - app-public-build:/var/www/html/public/build
+      # public/build comes from the host (npm run build) or Vite dev server.
     environment:
       APP_ENV: local
       APP_DEBUG: "true"
@@ -45,5 +45,4 @@ services:
 volumes:
   app-vendor:
   app-node-modules:
-  app-public-build:
   vite-node-modules:

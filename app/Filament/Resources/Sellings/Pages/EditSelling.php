@@ -76,8 +76,6 @@ class EditSelling extends EditRecord
             ->map(fn ($line) => [
                 'product_id' => $line->product_id,
                 'size_id' => $line->size_id,
-                'lot_line_id' => $line->lot_line_id,
-                'state' => $line->state?->value,
                 'quantity' => $line->quantity,
                 'unit_price' => $line->unit_price,
             ])

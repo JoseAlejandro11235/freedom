@@ -15,6 +15,18 @@ export interface SentuaProduct {
     stockQuantity?: number | null;
 }
 
+export interface CartItem extends SentuaProduct {
+    quantity: number;
+    maxQuantity: number | null;
+    lineTotal: number;
+}
+
+export interface CartSummary {
+    count: number;
+    subtotal: number;
+    items: CartItem[];
+}
+
 export interface SentuaCategory {
     name: string;
     href: string;
@@ -27,4 +39,10 @@ export interface SentuaPromo {
     cta: string;
     href: string;
     image: string;
+}
+
+export interface StorefrontNavItem {
+    label: string;
+    href: string;
+    highlight?: boolean;
 }

@@ -2,10 +2,14 @@
 
 namespace App\Providers;
 
+use App\Payments\Contracts\PaymentGateway;
+use App\Payments\Gateways\FakePaymentGateway;
+use App\Payments\Gateways\MercadoPagoPaymentGateway;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use InvalidArgumentException;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -14,7 +18,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(PaymentGateway::class, function () {
+            return match (config('services.payments.driver', 'fake')) {
+                'fake' => $this->app->make(FakePaymentGateway::class),
+                'mercadopago' => $this->app->make(MercadoPagoPaymentGateway::class),
+                default => throw new InvalidArgumentException('Unsupported payment driver.'),
+            };
+        });
     }
 
     /**

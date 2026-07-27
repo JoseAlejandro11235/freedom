@@ -2,9 +2,8 @@
 
 namespace App\Services;
 
-use App\Enums\StockDocumentStatus;
 use App\Enums\SellingLineStatus;
-use App\Models\Lot;
+use App\Enums\StockDocumentStatus;
 use App\Models\LotLine;
 use App\Models\Product;
 use App\Models\Purchase;
@@ -107,6 +106,10 @@ class StockDocumentService
 
             if ($toStatus === StockDocumentStatus::Confirmed) {
                 $this->assertStatus($selling, StockDocumentStatus::Draft, 'confirm');
+                $this->validateProductStockForSelling($selling->lines);
+                $this->assignLatestLotLines($selling);
+                $selling->load(['lines.product', 'lines.lotLine.lot', 'lines.lotLine.purchaseLine']);
+                $this->assertUnassignedLinesWithoutLots($selling->lines);
                 $this->applyLotStock($selling->lines, multiplier: -1);
                 $this->applySellingStock($selling->lines, multiplier: -1);
                 $this->setSellingLineState($selling->lines, SellingLineStatus::Confirmed);
@@ -129,6 +132,97 @@ class StockDocumentService
 
             return $selling->fresh(['lines.product', 'user']);
         });
+    }
+
+    /**
+     * @param  iterable<int, SellingLine>  $lines
+     */
+    private function validateProductStockForSelling(iterable $lines): void
+    {
+        foreach ($lines as $index => $line) {
+            $product = Product::query()->whereKey($line->product_id)->lockForUpdate()->firstOrFail();
+
+            if (! $product->track_inventory) {
+                throw ValidationException::withMessages([
+                    "lines.{$index}.product_id" => __('Inventory tracking is disabled for :name.', ['name' => $product->name]),
+                ]);
+            }
+
+            if ($product->stock_quantity < $line->quantity) {
+                throw ValidationException::withMessages([
+                    "lines.{$index}.quantity" => __('Not enough stock for :name. Current stock: :stock.', [
+                        'name' => $product->name,
+                        'stock' => $product->stock_quantity,
+                    ]),
+                ]);
+            }
+        }
+    }
+
+    private function assignLatestLotLines(Selling $selling): void
+    {
+        foreach ($selling->lines as $line) {
+            if ($line->lot_line_id !== null) {
+                continue;
+            }
+
+            $lotLine = $this->findLatestAvailableLotLine(
+                $line->product_id,
+                $line->size_id,
+                $line->quantity,
+            );
+
+            if ($lotLine === null) {
+                continue;
+            }
+
+            $line->lot_line_id = $lotLine->id;
+            $line->lot_id = $lotLine->lot_id;
+            $line->state = SellingLineStatus::Assigned;
+            $line->save();
+        }
+    }
+
+    private function findLatestAvailableLotLine(string $productId, ?string $sizeId, int $quantity): ?LotLine
+    {
+        return LotLine::query()
+            ->where('lot_lines.product_id', $productId)
+            ->where('lot_lines.quantity_available', '>=', $quantity)
+            ->when(
+                $sizeId !== null,
+                fn ($query) => $query->whereHas(
+                    'purchaseLine',
+                    fn ($query) => $query->where('size_id', $sizeId),
+                ),
+            )
+            ->join('lots', 'lots.id', '=', 'lot_lines.lot_id')
+            ->orderByDesc('lots.received_at')
+            ->select('lot_lines.*')
+            ->first();
+    }
+
+    /**
+     * @param  iterable<int, SellingLine>  $lines
+     */
+    private function assertUnassignedLinesWithoutLots(iterable $lines): void
+    {
+        foreach ($lines as $index => $line) {
+            if ($line->lot_line_id !== null) {
+                continue;
+            }
+
+            $hasLotLines = LotLine::query()
+                ->where('product_id', $line->product_id)
+                ->exists();
+
+            if ($hasLotLines) {
+                throw ValidationException::withMessages([
+                    "lines.{$index}.quantity" => __('No lot with enough available quantity for :name.', [
+                        'name' => $line->product?->name ?? $line->product_id,
+                    ]),
+                ]);
+            }
+        }
     }
 
     /**

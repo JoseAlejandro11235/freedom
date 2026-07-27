@@ -91,7 +91,7 @@ trait ManagesStockDocumentLines
         } elseif (array_key_exists('lot_id', $line) && $line['lot_id'] !== null && $line['lot_id'] !== '') {
             $attributes['lot_id'] = $line['lot_id'];
             $attributes['state'] = SellingLineStatus::Assigned;
-        } elseif (array_key_exists('state', $line)) {
+        } else {
             $attributes['state'] = SellingLineStatus::Pending;
         }
 

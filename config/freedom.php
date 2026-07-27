@@ -38,4 +38,12 @@ return [
 
     'catalog_disk' => env('FILESYSTEM_DISK', 'local'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Storefront catalog page size
+    |--------------------------------------------------------------------------
+    */
+
+    'catalog_per_page' => (int) env('CATALOG_PER_PAGE', 24),
+
 ];

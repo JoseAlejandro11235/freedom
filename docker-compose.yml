@@ -44,6 +44,11 @@ services:
       <<: *s3-env
     volumes:
       - storage:/var/www/html/storage
+      # Local dev: sync catalog/search changes without a full image rebuild.
+      - ./routes:/var/www/html/routes
+      - ./public/build:/var/www/html/public/build
+      - ./app/Http/Controllers:/var/www/html/app/Http/Controllers
+      - ./app/Support:/var/www/html/app/Support
     depends_on:
       mysql:
         condition: service_started

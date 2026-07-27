@@ -35,4 +35,15 @@ return [
         ],
     ],
 
+    'payments' => [
+        // fake | mercadopago
+        'driver' => env('PAYMENT_DRIVER', 'fake'),
+    ],
+
+    'mercadopago' => [
+        'access_token' => env('MERCADOPAGO_ACCESS_TOKEN'),
+        'public_key' => env('MERCADOPAGO_PUBLIC_KEY'),
+        'sandbox' => env('MERCADOPAGO_SANDBOX', true),
+    ],
+
 ];

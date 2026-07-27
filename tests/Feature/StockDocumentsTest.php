@@ -12,11 +12,11 @@ use App\Models\Purchase;
 use App\Models\PurchaseExpense;
 use App\Models\PurchaseLine;
 use App\Models\PurchaseStatus;
-use App\Models\Size;
-use App\Support\PurchaseTotals;
 use App\Models\Selling;
 use App\Models\SellingLine;
+use App\Models\Size;
 use App\Services\StockDocumentService;
+use App\Support\PurchaseTotals;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
@@ -256,9 +256,7 @@ class StockDocumentsTest extends TestCase
         $line = SellingLine::query()->create([
             'selling_record_id' => $selling->id,
             'product_id' => $product->id,
-            'lot_id' => $lot->id,
-            'lot_line_id' => $lotLine->id,
-            'state' => SellingLineStatus::Assigned,
+            'state' => SellingLineStatus::Pending,
             'quantity' => 3,
         ]);
 
@@ -266,6 +264,31 @@ class StockDocumentsTest extends TestCase
 
         $this->assertSame(2, $lotLine->fresh()->quantity_available);
         $this->assertSame(2, $product->fresh()->stock_quantity);
+        $this->assertSame(SellingLineStatus::Confirmed, $line->fresh()->state);
+        $this->assertSame($lotLine->id, $line->fresh()->lot_line_id);
+    }
+
+    public function test_draft_selling_line_is_pending_until_confirmed(): void
+    {
+        $product = $this->trackedProduct(stock: 10);
+        $selling = $this->draftSelling($product, quantity: 3);
+        $line = $selling->lines()->firstOrFail();
+
+        $this->assertSame(SellingLineStatus::Pending, $line->state);
+        $this->assertNull($line->lot_line_id);
+    }
+
+    public function test_confirming_selling_without_lots_decreases_product_stock_directly(): void
+    {
+        $product = $this->trackedProduct(stock: 10);
+        $selling = $this->draftSelling($product, quantity: 4);
+
+        app(StockDocumentService::class)->confirmSelling($selling);
+
+        $line = $selling->lines()->firstOrFail();
+
+        $this->assertSame(6, $product->fresh()->stock_quantity);
+        $this->assertNull($line->fresh()->lot_line_id);
         $this->assertSame(SellingLineStatus::Confirmed, $line->fresh()->state);
     }
 
@@ -446,6 +469,7 @@ class StockDocumentsTest extends TestCase
         SellingLine::query()->create([
             'selling_record_id' => $selling->id,
             'product_id' => $product->id,
+            'state' => SellingLineStatus::Pending,
             'quantity' => $quantity,
         ]);
 

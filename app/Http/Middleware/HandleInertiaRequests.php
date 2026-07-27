@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\CartService;
+use App\Support\StorefrontPresenter;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -46,6 +48,12 @@ class HandleInertiaRequests extends Middleware
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
                 'user' => $request->user(),
+            ],
+            'cart' => fn () => app(CartService::class)->summary(),
+            'navigation' => fn () => StorefrontPresenter::navigation(),
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
             ],
         ]);
     }

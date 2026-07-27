@@ -51,8 +51,8 @@ class ProductFactory extends Factory
         ];
     }
 
-    public function flashSale(): static
+    public function featured(): static
     {
-        return $this->state(fn () => ['homepage_section' => HomepageSection::FlashSale]);
+        return $this->state(fn () => ['homepage_section' => HomepageSection::Featured]);
     }
 }

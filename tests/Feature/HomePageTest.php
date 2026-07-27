@@ -23,7 +23,7 @@ class HomePageTest extends TestCase
     {
         Product::factory()->create([
             'name' => 'Test Fragrance',
-            'homepage_section' => HomepageSection::FlashSale,
+            'homepage_section' => HomepageSection::Featured,
             'is_published' => true,
             'stock_quantity' => 10,
             'track_inventory' => true,
@@ -34,7 +34,10 @@ class HomePageTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
             ->component('welcome')
-            ->has('flashSaleProducts', 1)
-            ->where('flashSaleProducts.0.name', 'Test Fragrance'));
+            ->has('featuredProducts', 1)
+            ->where('featuredProducts.0.name', 'Test Fragrance')
+            ->has('promos')
+            ->has('brands')
+            ->has('navigation'));
     }
 }

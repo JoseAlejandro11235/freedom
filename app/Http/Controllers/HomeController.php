@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Enums\HomepageSection;
-use App\Models\Category;
 use App\Models\Product;
 use App\Support\CatalogPresenter;
+use App\Support\StorefrontPresenter;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -13,29 +13,23 @@ class HomeController extends Controller
 {
     public function __invoke(): Response
     {
-        $flashSaleProducts = Product::query()
+        $featuredProducts = Product::query()
             ->with(['brand', 'images'])
-            ->forHomepageSection(HomepageSection::FlashSale)
+            ->forHomepageSection(HomepageSection::Featured)
             ->get()
             ->map(fn (Product $product) => CatalogPresenter::product($product))
             ->values()
             ->all();
 
-        $forHimProducts = Product::query()
+        $newArrivalsProducts = Product::query()
             ->with(['brand', 'images'])
-            ->forHomepageSection(HomepageSection::ForHim)
+            ->forHomepageSection(HomepageSection::NewArrivals)
             ->get()
             ->map(fn (Product $product) => CatalogPresenter::product($product))
             ->values()
             ->all();
 
-        $categories = Category::query()
-            ->whereNull('category_father_id')
-            ->where('is_published', true)
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get()
-            ->map(fn (Category $category) => CatalogPresenter::category($category))
+        $categories = StorefrontPresenter::categories()
             ->values()
             ->all();
 
@@ -44,9 +38,11 @@ class HomeController extends Controller
                 'title' => 'Freedom — Perfumes, Maquillaje y Skincare Online en Perú',
                 'description' => 'Compra perfumes, maquillaje y skincare de las mejores marcas de lujo.',
             ],
-            'flashSaleProducts' => $flashSaleProducts,
-            'forHimProducts' => $forHimProducts,
+            'featuredProducts' => $featuredProducts,
+            'newArrivalsProducts' => $newArrivalsProducts,
             'categories' => $categories,
+            'promos' => StorefrontPresenter::promos(),
+            'brands' => StorefrontPresenter::brandNames(),
         ]);
     }
 }

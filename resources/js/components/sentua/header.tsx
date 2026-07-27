@@ -1,14 +1,42 @@
 import { FreedomLogo } from '@/components/freedom-logo';
+import { CartDrawer } from '@/components/sentua/cart-drawer';
+import { CatalogSearchForm } from '@/components/sentua/catalog-search-form';
 import { MobileMenu } from '@/components/sentua/mobile-menu';
-import { navItems } from '@/data/sentua-products';
 import type { SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { ChevronDown, MapPin, Menu, Search, ShoppingBag, Sparkles, User } from 'lucide-react';
-import { useState } from 'react';
+import { ChevronDown, MapPin, Menu, ShoppingBag, Sparkles, User } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
-export function SentuaHeader() {
-    const { auth, logoUrl } = usePage<SharedData>().props;
+interface SentuaHeaderProps {
+    searchQuery?: string;
+}
+
+export function SentuaHeader({ searchQuery = '' }: SentuaHeaderProps) {
+    const { auth, logoUrl, cart, flash, navigation } = usePage<SharedData>().props;
+    const navItems = navigation ?? [];
+    const cartCount = cart?.count ?? 0;
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [cartOpen, setCartOpen] = useState(false);
+    const [toast, setToast] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (flash?.success) {
+            setToast(flash.success);
+            setCartOpen(true);
+        } else if (flash?.error) {
+            setToast(flash.error);
+        }
+    }, [flash?.success, flash?.error]);
+
+    useEffect(() => {
+        if (!toast) {
+            return;
+        }
+
+        const timer = window.setTimeout(() => setToast(null), 2800);
+
+        return () => window.clearTimeout(timer);
+    }, [toast]);
 
     return (
         <header className="sticky top-0 z-50 w-full max-w-full overflow-x-hidden bg-white shadow-sm">
@@ -17,15 +45,9 @@ export function SentuaHeader() {
                 <div className="flex w-full flex-col items-center gap-1 px-4 py-2 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-2 lg:px-10 xl:px-16">
                     <div className="flex flex-wrap items-center justify-center gap-2">
                         <Sparkles className="h-3 w-3 shrink-0 text-amber-400" />
-                        <span className="font-semibold uppercase">Venta Flash</span>
+                        <span className="font-semibold uppercase">Envío gratis</span>
                         <span className="hidden text-neutral-300 sm:inline">|</span>
-                        <span className="sm:hidden">
-                            <strong className="text-white">08</strong>h : <strong>42</strong>m
-                        </span>
-                        <span className="hidden sm:inline">
-                            Quedan <strong className="text-white">00</strong> Días : <strong>08</strong> Horas :{' '}
-                            <strong>42</strong> Min
-                        </span>
+                        <span>En compras desde S/199</span>
                     </div>
                     <span className="hidden text-neutral-300 sm:inline">|</span>
                     <Link href="#" className="font-medium underline-offset-2 hover:underline">
@@ -106,36 +128,25 @@ export function SentuaHeader() {
                         <span>Menú</span>
                     </button>
 
-                    {/* Desktop: full-width pill search with button inside */}
-                    <form
-                        className="relative hidden min-w-0 flex-1 items-center lg:flex"
-                        onSubmit={(e) => e.preventDefault()}
-                        role="search"
-                    >
-                        <input
-                            type="search"
-                            placeholder="Buscar perfumes, maquillaje, skincare..."
-                            className="w-full rounded-full border border-neutral-900 bg-white py-2.5 pr-12 pl-4 text-sm text-neutral-900 outline-none placeholder:text-neutral-500 focus:ring-1 focus:ring-neutral-900"
-                        />
-                        <button
-                            type="submit"
-                            className="absolute top-1/2 right-1 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black text-white transition-colors hover:bg-neutral-800"
-                            aria-label="Buscar"
-                        >
-                            <Search className="h-4 w-4" strokeWidth={2} />
-                        </button>
-                    </form>
+                    <CatalogSearchForm searchQuery={searchQuery} variant="desktop" />
 
                     <div className="ml-auto flex shrink-0 items-center gap-3 lg:ml-0 lg:gap-6">
                         <Link href="#" className="hidden items-center gap-1 text-xs font-medium lg:flex">
                             <Sparkles className="h-4 w-4" />
                             Beauty Club
                         </Link>
-                        <button type="button" className="relative shrink-0 p-1" aria-label="Carrito">
+                        <button
+                            type="button"
+                            className="relative shrink-0 p-1"
+                            aria-label="Carrito"
+                            onClick={() => setCartOpen(true)}
+                        >
                             <ShoppingBag className="h-5 w-5" />
-                            <span className="absolute top-0 right-0 flex h-4 w-4 translate-x-1/4 -translate-y-1/4 items-center justify-center rounded-full bg-black text-[9px] font-bold text-white">
-                                0
-                            </span>
+                            {cartCount > 0 && (
+                                <span className="absolute top-0 right-0 flex h-4 min-w-4 translate-x-1/4 -translate-y-1/4 items-center justify-center rounded-full bg-black px-1 text-[9px] font-bold text-white">
+                                    {cartCount > 99 ? '99+' : cartCount}
+                                </span>
+                            )}
                         </button>
                         <Link href={auth.user ? '/dashboard' : '/login'} className="hidden sm:block" aria-label="Cuenta">
                             <User className="h-5 w-5" />
@@ -143,18 +154,20 @@ export function SentuaHeader() {
                     </div>
                 </div>
 
-                {/* Search mobile */}
-                <div className="relative mt-3 lg:hidden">
-                    <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-neutral-400" />
-                    <input
-                        type="search"
-                        placeholder="Buscar..."
-                        className="w-full rounded-full border border-neutral-200 bg-neutral-50 py-2 pr-4 pl-10 text-sm"
-                    />
-                </div>
+                <CatalogSearchForm searchQuery={searchQuery} variant="mobile" />
             </div>
 
             <MobileMenu open={mobileMenuOpen} onOpenChange={setMobileMenuOpen} />
+            <CartDrawer open={cartOpen} onOpenChange={setCartOpen} />
+
+            {toast && (
+                <div
+                    role="status"
+                    className="fixed right-4 bottom-20 z-[60] max-w-xs border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 shadow-lg"
+                >
+                    {toast}
+                </div>
+            )}
 
             {/* Navigation — desktop only; mobile uses slide-out drawer */}
             <nav className="hidden border-t border-neutral-100 bg-white lg:block">

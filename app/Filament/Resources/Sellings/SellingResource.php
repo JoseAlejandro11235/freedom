@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Sellings;
 
+use App\Enums\SellingLineStatus;
+use App\Enums\StockDocumentStatus;
 use App\Filament\Concerns\AuthorizesAdminResources;
 use App\Filament\Resources\Sellings\Pages\CreateSelling;
 use App\Filament\Resources\Sellings\Pages\EditSelling;
@@ -9,8 +11,6 @@ use App\Filament\Resources\Sellings\Pages\ListSellings;
 use App\Filament\Resources\Sellings\Pages\ViewSelling;
 use App\Filament\Resources\Sellings\Schemas\SellingForm;
 use App\Filament\Resources\Sellings\Tables\SellingsTable;
-use App\Enums\StockDocumentStatus;
-use App\Enums\SellingLineStatus;
 use App\Models\Selling;
 use BackedEnum;
 use Filament\Infolists\Components\RepeatableEntry;
@@ -69,7 +69,9 @@ class SellingResource extends Resource
                         RepeatableEntry::make('lines')
                             ->label('')
                             ->schema([
-                                TextEntry::make('product.name')->label('Producto'),
+                                TextEntry::make('product_display')
+                                    ->label('Producto')
+                                    ->state(fn ($record): string => $record->product?->displayName() ?? '—'),
                                 TextEntry::make('size.name')->label('Talla')->placeholder('—'),
                                 TextEntry::make('lotLine.lot.lot_number')->label('Lote')->placeholder('—'),
                                 TextEntry::make('state')

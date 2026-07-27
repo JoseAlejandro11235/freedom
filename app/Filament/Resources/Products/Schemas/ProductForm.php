@@ -34,7 +34,7 @@ class ProductForm
                                     ->relationship('brand', 'name')
                                     ->searchable()
                                     ->preload()
-                                    ->required()
+                                    ->nullable()
                                     ->createOptionForm([
                                         TextInput::make('name')
                                             ->label('Nombre')

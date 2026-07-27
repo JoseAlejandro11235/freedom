@@ -17,6 +17,7 @@ class VerifyCsrfToken extends Middleware
     protected $except = [
         'livewire-*/upload-file',
         'livewire-*/preview-file/*',
+        'payments/*/webhook',
     ];
 }
 

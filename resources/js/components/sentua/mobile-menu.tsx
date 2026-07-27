@@ -1,4 +1,3 @@
-import { navItems } from '@/data/sentua-products';
 import type { SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { ChevronRight, HelpCircle, LogIn, MapPin, Package, Sparkles, User, UserPlus, X, type LucideIcon } from 'lucide-react';
@@ -34,7 +33,8 @@ function MenuLink({ href, label, icon: Icon, showChevron = true, onNavigate }: M
 }
 
 export function MobileMenu({ open, onOpenChange }: MobileMenuProps) {
-    const { auth } = usePage<SharedData>().props;
+    const { auth, navigation } = usePage<SharedData>().props;
+    const navItems = navigation ?? [];
     const close = () => onOpenChange(false);
 
     const accountLinks: MenuLinkProps[] = auth.user
@@ -102,7 +102,7 @@ export function MobileMenu({ open, onOpenChange }: MobileMenuProps) {
                                     </span>
                                     {item.highlight && (
                                         <span className="shrink-0 rounded-sm bg-[#c41e3a] px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-white uppercase">
-                                            Sale
+                                            Top
                                         </span>
                                     )}
                                     <ChevronRight className="ml-auto h-4 w-4 shrink-0 text-neutral-400" />

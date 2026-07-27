@@ -70,16 +70,18 @@ class StockDocumentLinesSchema
                 ->disabled(fn (?object $record): bool => $record !== null && ! $record->isDraft());
         } else {
             $lineSchema[] = Select::make('product_id')
-                    ->label('Producto')
-                    ->options(fn (): array => Product::query()
-                        ->where('track_inventory', true)
-                        ->orderBy('name')
-                        ->pluck('name', 'id')
-                        ->all())
-                    ->searchable()
-                    ->required()
-                    ->afterStateUpdated(fn (Set $set): mixed => $set('size_id', null))
-                    ->disabled(fn (?object $record): bool => $record !== null && ! $record->isDraft());
+                ->label('Producto')
+                ->options(fn (): array => Product::query()
+                    ->where('track_inventory', true)
+                    ->orderBy('code')
+                    ->orderBy('name')
+                    ->get()
+                    ->mapWithKeys(fn (Product $product): array => [$product->id => $product->displayName()])
+                    ->all())
+                ->searchable()
+                ->required()
+                ->afterStateUpdated(fn (Set $set): mixed => $set('size_id', null))
+                ->disabled(fn (?object $record): bool => $record !== null && ! $record->isDraft());
             $lineSchema[] = Select::make('size_id')
                 ->label('Talla')
                 ->options(fn (): array => Size::query()
@@ -116,16 +118,16 @@ class StockDocumentLinesSchema
             ->disabled(fn (?object $record): bool => $record !== null && ! $record->isDraft());
 
         $repeater = Repeater::make('lines')
-                ->label('Productos')
-                ->columnSpanFull()
-                ->schema($lineSchema)
-                ->columns($withLotSelection ? 3 : 4)
-                ->minItems(1)
-                ->defaultItems(1)
-                ->columnSpanFull()
-                ->deletable(fn (?object $record): bool => $record === null || $record->isDraft())
-                ->addable(fn (?object $record): bool => $record === null || $record->isDraft())
-                ->reorderable(fn (?object $record): bool => $record === null || $record->isDraft());
+            ->label('Productos')
+            ->columnSpanFull()
+            ->schema($lineSchema)
+            ->columns($withLotSelection ? 3 : 4)
+            ->minItems(1)
+            ->defaultItems(1)
+            ->columnSpanFull()
+            ->deletable(fn (?object $record): bool => $record === null || $record->isDraft())
+            ->addable(fn (?object $record): bool => $record === null || $record->isDraft())
+            ->reorderable(fn (?object $record): bool => $record === null || $record->isDraft());
 
         if ($live) {
             $repeater->live();
@@ -133,5 +135,4 @@ class StockDocumentLinesSchema
 
         return [$repeater];
     }
-
 }

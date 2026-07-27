@@ -163,7 +163,6 @@ class Product extends Model
     {
         return $query
             ->published()
-            ->inStock()
             ->where('homepage_section', $section)
             ->orderBy('sort_order')
             ->orderBy('name');
@@ -176,6 +175,11 @@ class Product extends Model
         }
 
         return $this->images()->orderBy('sort_order')->first();
+    }
+
+    public function displayName(): string
+    {
+        return filled($this->code) ? "{$this->code} · {$this->name}" : $this->name;
     }
 
     public function imageUrl(): ?string

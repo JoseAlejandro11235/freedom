@@ -6,14 +6,14 @@ interface ProductGridProps {
     subtitle?: string;
     products: SentuaProduct[];
     cta?: { label: string; href: string };
-    /** Carousel on mobile/tablet; grid from `lg` up (e.g. "Lo mejor para ellos"). */
+    /** Carousel on mobile/tablet; grid from `lg` up (e.g. "Novedades"). */
     layout?: 'grid' | 'carousel';
 }
 
 const productGridClassName =
     'grid w-full min-w-0 grid-cols-2 items-stretch gap-3 sm:gap-6 md:grid-cols-3 lg:grid-cols-4 [&>*]:min-w-0';
 
-export function ProductGrid({ title, subtitle, products, cta, layout = 'grid' }: ProductGridProps) {
+export function ProductGrid({ title, subtitle, products = [], cta, layout = 'grid' }: ProductGridProps) {
     return (
         <section className="py-10 lg:py-14">
             <div className="mx-auto max-w-7xl px-4">
