@@ -67,6 +67,7 @@ class OrderResource extends Resource
                             ->label('Pasarela')
                             ->formatStateUsing(fn (?string $state): string => match ($state) {
                                 'fake' => 'Prueba local',
+                                'culqi' => 'Culqi',
                                 'mercadopago' => 'Mercado Pago',
                                 default => $state ?: '—',
                             }),

@@ -14,39 +14,6 @@ const benefits = [
     { icon: Leaf, text: 'Cuidamos el medioambiente. Caja 100% reciclable' },
 ];
 
-const heroPhrases = [
-    {
-        text: 'El hombre nace libre, pero en todas partes está encadenado.',
-        author: 'Rousseau',
-        className: 'left-[4%] top-[6%] text-left text-[clamp(1.1rem,3vw,2.5rem)]',
-    },
-    {
-        text: '¿Quieres saber qué es la libertad? No ser esclavo de nada.',
-        author: 'Séneca',
-        className: 'right-[4%] top-[14%] text-right text-[clamp(1.05rem,2.8vw,2.3rem)]',
-    },
-    {
-        text: 'La libertad es la obediencia a la ley que uno se ha prescrito.',
-        author: 'Rousseau',
-        className: 'left-[5%] top-[34%] text-left text-[clamp(1.05rem,2.8vw,2.35rem)]',
-    },
-    {
-        text: 'La libertad no es hacer lo que se quiere, sino poder hacer lo que se debe.',
-        author: 'Kant',
-        className: 'right-[5%] top-[42%] text-right text-[clamp(1rem,2.65vw,2.2rem)]',
-    },
-    {
-        text: 'Nadie es libre si no es dueño de sí mismo.',
-        author: 'Epicteto',
-        className: 'left-[6%] bottom-[20%] text-left text-[clamp(1.1rem,3vw,2.5rem)]',
-    },
-    {
-        text: 'La libertad es el derecho de hacer todo lo que las leyes permiten.',
-        author: 'Montesquieu',
-        className: 'right-[6%] bottom-[10%] text-right text-[clamp(1.05rem,2.75vw,2.3rem)]',
-    },
-];
-
 interface WelcomeProps {
     meta: {
         title: string;
@@ -79,92 +46,48 @@ export default function Welcome() {
             >
                 <SentuaHeader />
 
-                {/* Hero — layered typography */}
-                <section className="relative isolate min-h-[min(92vh,56rem)] overflow-hidden bg-[#efe8ea] text-neutral-950">
-                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_20%_20%,#c41e3a22,transparent_45%),radial-gradient(ellipse_at_85%_70%,#1a1a1a12,transparent_40%)]" />
-
-                    {/* Accent shapes */}
-                    <div className="pointer-events-none absolute top-[12%] left-[6%] h-16 w-16 rounded-full bg-[#c41e3a] opacity-90 sm:h-20 sm:w-20 lg:h-24 lg:w-24 animate-[hero-float_8s_ease-in-out_infinite]" />
-                    <div className="pointer-events-none absolute top-[28%] right-[18%] h-10 w-10 rotate-45 border-2 border-[#c41e3a]/80 sm:h-12 sm:w-12 animate-[hero-float_10s_ease-in-out_infinite_reverse]" />
-                    <div className="pointer-events-none absolute bottom-[18%] left-[22%] h-14 w-14 rounded-full bg-[#1a1a1a] opacity-80 sm:h-16 sm:w-16 animate-[hero-float_9s_ease-in-out_infinite]" />
-                    <div
-                        className="pointer-events-none absolute top-[55%] right-[8%] h-20 w-20 opacity-90 sm:h-24 sm:w-24"
-                        style={{
-                            background:
-                                'conic-gradient(from 0deg, #c41e3a 0deg 18deg, transparent 18deg 36deg)',
-                            WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 10px), #000 calc(100% - 9px))',
-                            mask: 'radial-gradient(farthest-side, transparent calc(100% - 10px), #000 calc(100% - 9px))',
-                            animation: 'hero-spin 18s linear infinite',
-                        }}
-                    />
-
-                    {/* Background phrases — kept fully inside the hero */}
-                    <div className="pointer-events-none absolute inset-0 select-none overflow-hidden p-4 sm:p-6 lg:p-8" aria-hidden>
-                        {heroPhrases.map((phrase, index) => (
-                            <p
-                                key={phrase.text}
-                                className={`absolute max-w-[42vw] text-balance font-serif italic leading-[0.95] tracking-tight text-neutral-900/30 sm:max-w-[38vw] ${phrase.className}`}
-                                style={{
-                                    animation: `hero-phrase-in 1.1s ease-out ${0.08 * index}s both`,
-                                }}
-                            >
-                                {phrase.text}{' '}
-                                <span className="whitespace-nowrap text-[0.38em] not-italic tracking-[0.12em]">
-                                    — {phrase.author}
-                                </span>
-                            </p>
-                        ))}
-                    </div>
-
-                    {/* Brand + CTA */}
-                    <div className="relative z-10 mx-auto flex min-h-[min(92vh,56rem)] max-w-7xl flex-col items-center justify-center px-4 pb-16 pt-10 text-center">
+                {/* Hero */}
+                <section className="relative isolate min-h-[min(80vh,48rem)] overflow-hidden bg-[#000] text-white">
+                    <div className="relative z-10 mx-auto flex min-h-[min(80vh,48rem)] max-w-7xl flex-col items-center justify-center px-4 pb-16 pt-10 text-center">
                         <p
-                            className="text-xs font-bold tracking-[0.35em] text-[#c41e3a] uppercase"
-                            style={{ animation: 'hero-phrase-in 0.8s ease-out 0.15s both' }}
+                            className="text-xs font-bold tracking-[0.35em] text-neutral-400 uppercase"
+                            style={{ animation: 'hero-fade-in 0.8s ease-out 0.15s both' }}
                         >
-                            Perfumes · Maquillaje · Skincare
+                            Perfumes · Maquillaje · Skincare · Ropa · Accesorios
                         </p>
                         <h1
-                            className="mt-4 whitespace-nowrap font-serif text-[clamp(2.75rem,11vw,8.5rem)] leading-none font-medium tracking-[0.12em] text-neutral-950 uppercase"
+                            className="mt-4 whitespace-nowrap font-serif text-[clamp(2.75rem,11vw,8.5rem)] leading-none font-medium tracking-[0.12em] text-white uppercase"
                             style={{
                                 fontFamily: "'Playfair Display', serif",
                                 animation: 'hero-brand-in 1s cubic-bezier(0.16,1,0.3,1) 0.15s both',
                             }}
                         >
                             <ScrambleText text="FREEDOM" />
-                            <span className="text-[#c41e3a]">*</span>
+                            <span className="text-neutral-500">*</span>
                         </h1>
                         <p
-                            className="mt-6 max-w-md text-base text-neutral-700 sm:text-lg"
-                            style={{ animation: 'hero-phrase-in 0.9s ease-out 0.45s both' }}
+                            className="mt-6 max-w-md text-base text-neutral-300 sm:text-lg"
+                            style={{ animation: 'hero-fade-in 0.9s ease-out 0.45s both' }}
                         >
                             Belleza con carácter. Elige lo que te hace sentir libre.
                         </p>
                         <a
                             href="#destacados"
-                            className="mt-8 inline-block bg-neutral-950 px-8 py-3 text-xs font-bold tracking-widest text-white uppercase transition-colors hover:bg-[#c41e3a]"
-                            style={{ animation: 'hero-phrase-in 0.9s ease-out 0.55s both' }}
+                            className="mt-8 inline-block bg-white px-8 py-3 text-xs font-bold tracking-widest text-black uppercase transition-colors hover:bg-neutral-200"
+                            style={{ animation: 'hero-fade-in 0.9s ease-out 0.55s both' }}
                         >
                             Ver destacados
                         </a>
                     </div>
 
                     <style>{`
-                        @keyframes hero-phrase-in {
+                        @keyframes hero-fade-in {
                             from { opacity: 0; transform: translateY(18px); }
                             to { opacity: 1; transform: translateY(0); }
                         }
                         @keyframes hero-brand-in {
                             from { opacity: 0; transform: scale(0.92) translateY(24px); }
                             to { opacity: 1; transform: scale(1) translateY(0); }
-                        }
-                        @keyframes hero-float {
-                            0%, 100% { transform: translateY(0); }
-                            50% { transform: translateY(-12px); }
-                        }
-                        @keyframes hero-spin {
-                            from { transform: rotate(0deg); }
-                            to { transform: rotate(360deg); }
                         }
                     `}</style>
                 </section>

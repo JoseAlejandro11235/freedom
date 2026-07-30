@@ -51,6 +51,7 @@ class OrdersTable
                     ->label('Pasarela')
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
                         'fake' => 'Prueba',
+                        'culqi' => 'Culqi',
                         'mercadopago' => 'Mercado Pago',
                         default => $state ?: '—',
                     })
@@ -75,6 +76,7 @@ class OrdersTable
                     ->label('Pasarela')
                     ->options([
                         'fake' => 'Prueba local',
+                        'culqi' => 'Culqi',
                         'mercadopago' => 'Mercado Pago',
                     ]),
             ])

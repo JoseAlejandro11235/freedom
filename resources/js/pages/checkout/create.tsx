@@ -36,7 +36,13 @@ export default function CheckoutCreate({ cart, paymentProvider }: CheckoutCreate
                     <h1 className="font-serif text-3xl tracking-wide uppercase">Finalizar compra</h1>
                     <p className="mt-2 text-sm text-neutral-500">
                         Completa tus datos para continuar al pago
-                        {paymentProvider === 'fake' ? ' (modo prueba local).' : ' con Mercado Pago.'}
+                        {paymentProvider === 'fake'
+                            ? ' (modo prueba local).'
+                            : paymentProvider === 'culqi'
+                              ? ' con Culqi.'
+                              : paymentProvider === 'mercadopago'
+                                ? ' con Mercado Pago.'
+                                : '.'}
                     </p>
 
                     <div className="mt-10 grid gap-10 lg:grid-cols-[1.2fr_0.8fr]">

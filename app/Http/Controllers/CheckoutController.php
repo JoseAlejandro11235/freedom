@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Payments\Gateways\CulqiPaymentGateway;
 use App\Services\CartService;
 use App\Services\CheckoutService;
 use Illuminate\Http\RedirectResponse;
@@ -97,6 +98,60 @@ class CheckoutController extends Controller
         $this->checkout->markFailed($order);
 
         return redirect()->route('checkout.failure', $order);
+    }
+
+    public function culqiPay(Order $order): Response|RedirectResponse
+    {
+        if ($order->payment_provider !== 'culqi') {
+            abort(404);
+        }
+
+        if ($order->isPaid()) {
+            return redirect()->route('checkout.success', $order);
+        }
+
+        $publicKey = (string) config('services.culqi.public_key');
+
+        if ($publicKey === '') {
+            return redirect()->route('checkout.failure', $order)
+                ->with('error', 'Culqi no está configurado.');
+        }
+
+        return Inertia::render('checkout/culqi-pay', [
+            'order' => $this->presentOrder($order),
+            'culqiPublicKey' => $publicKey,
+        ]);
+    }
+
+    public function culqiCharge(Request $request, Order $order, CulqiPaymentGateway $culqi): RedirectResponse
+    {
+        if ($order->payment_provider !== 'culqi') {
+            abort(404);
+        }
+
+        if ($order->isPaid()) {
+            $this->cart->clear();
+
+            return redirect()->route('checkout.success', $order);
+        }
+
+        $validated = $request->validate([
+            'token' => ['required', 'string', 'max:255'],
+        ]);
+
+        try {
+            $charge = $culqi->createCharge($order, $validated['token']);
+            $this->checkout->markPaid($order, $charge['id']);
+            $this->cart->clear();
+
+            return redirect()->route('checkout.success', $order);
+        } catch (\Throwable $exception) {
+            report($exception);
+            $this->checkout->markFailed($order);
+
+            return redirect()->route('checkout.failure', $order)
+                ->with('error', $exception->getMessage() ?: 'No se pudo completar el pago.');
+        }
     }
 
     public function success(Order $order): Response

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Payments\Contracts\PaymentGateway;
+use App\Payments\Gateways\CulqiPaymentGateway;
 use App\Payments\Gateways\FakePaymentGateway;
 use App\Payments\Gateways\MercadoPagoPaymentGateway;
 use App\Services\CheckoutService;
@@ -34,7 +35,9 @@ class PaymentWebhookController extends Controller
         }
 
         if ($gateway->isPaymentApproved($request, $order)) {
-            $reference = $request->input('data.id') ?? $request->input('id') ?? $request->input('payment_id');
+            $reference = $request->input('data.id')
+                ?? $request->input('id')
+                ?? $request->input('payment_id');
             $this->checkout->markPaid($order, filled($reference) ? (string) $reference : null);
         }
 
@@ -45,6 +48,7 @@ class PaymentWebhookController extends Controller
     {
         return match ($provider) {
             'fake' => app(FakePaymentGateway::class),
+            'culqi' => app(CulqiPaymentGateway::class),
             'mercadopago' => app(MercadoPagoPaymentGateway::class),
             default => throw new NotFoundHttpException('Unknown payment provider.'),
         };

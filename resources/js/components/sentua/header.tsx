@@ -4,7 +4,7 @@ import { CatalogSearchForm } from '@/components/sentua/catalog-search-form';
 import { MobileMenu } from '@/components/sentua/mobile-menu';
 import type { SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { ChevronDown, MapPin, Menu, ShoppingBag, Sparkles, User } from 'lucide-react';
+import { MapPin, Menu, ShoppingBag, Sparkles, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface SentuaHeaderProps {
@@ -12,8 +12,7 @@ interface SentuaHeaderProps {
 }
 
 export function SentuaHeader({ searchQuery = '' }: SentuaHeaderProps) {
-    const { auth, logoUrl, cart, flash, navigation } = usePage<SharedData>().props;
-    const navItems = navigation ?? [];
+    const { auth, logoUrl, cart, flash } = usePage<SharedData>().props;
     const cartCount = cart?.count ?? 0;
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [cartOpen, setCartOpen] = useState(false);
@@ -168,27 +167,6 @@ export function SentuaHeader({ searchQuery = '' }: SentuaHeaderProps) {
                     {toast}
                 </div>
             )}
-
-            {/* Navigation — desktop only; mobile uses slide-out drawer */}
-            <nav className="hidden border-t border-neutral-100 bg-white lg:block">
-                <ul className="flex w-full flex-col gap-0 px-4 lg:flex-row lg:items-center lg:justify-center lg:gap-1 lg:px-10 lg:py-0 xl:px-16">
-                    {navItems.map((item) => (
-                        <li key={item.label}>
-                            <a
-                                href={item.href}
-                                className={`flex items-center gap-1 px-3 py-3 text-xs font-medium tracking-wide uppercase transition-colors hover:bg-neutral-50 lg:py-3.5 ${
-                                    item.highlight ? 'font-bold text-[#c41e3a]' : 'text-neutral-800'
-                                }`}
-                            >
-                                {item.label}
-                                {!item.highlight && (
-                                    <ChevronDown className="hidden h-3 w-3 opacity-40 lg:inline" />
-                                )}
-                            </a>
-                        </li>
-                    ))}
-                </ul>
-            </nav>
         </header>
     );
 }

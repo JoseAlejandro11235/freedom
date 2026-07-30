@@ -20,6 +20,8 @@ Route::get('/checkout', [CheckoutController::class, 'create'])->name('checkout.c
 Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 Route::get('/checkout/orders/{order}/pay', [CheckoutController::class, 'fakePay'])->name('checkout.fake.pay');
 Route::post('/checkout/orders/{order}/pay', [CheckoutController::class, 'fakeConfirm'])->name('checkout.fake.confirm');
+Route::get('/checkout/orders/{order}/culqi', [CheckoutController::class, 'culqiPay'])->name('checkout.culqi.pay');
+Route::post('/checkout/orders/{order}/culqi/charge', [CheckoutController::class, 'culqiCharge'])->name('checkout.culqi.charge');
 Route::get('/checkout/orders/{order}/success', [CheckoutController::class, 'success'])->name('checkout.success');
 Route::get('/checkout/orders/{order}/pending', [CheckoutController::class, 'pending'])->name('checkout.pending');
 Route::get('/checkout/orders/{order}/failure', [CheckoutController::class, 'failure'])->name('checkout.failure');

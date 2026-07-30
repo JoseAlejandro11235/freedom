@@ -36,8 +36,13 @@ return [
     ],
 
     'payments' => [
-        // fake | mercadopago
+        // fake | culqi | mercadopago
         'driver' => env('PAYMENT_DRIVER', 'fake'),
+    ],
+
+    'culqi' => [
+        'public_key' => env('CULQI_PUBLIC_KEY'),
+        'secret_key' => env('CULQI_SECRET_KEY'),
     ],
 
     'mercadopago' => [
