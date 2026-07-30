@@ -12,6 +12,10 @@ services:
   app:
     restart: unless-stopped
     ports: !reset []
+    # Do not bind-mount host ./public/build (or local source paths) in production —
+    # that hides the Vite assets baked into the image and causes ViteManifestNotFoundException.
+    volumes: !reset
+      - storage:/var/www/html/storage
     environment:
       APP_ENV: production
       APP_DEBUG: "false"

@@ -70,8 +70,9 @@ RUN sed -i 's/\r$//' /usr/local/bin/entrypoint.sh \
 WORKDIR /var/www/html
 
 COPY --from=composer /app/vendor ./vendor
-COPY --from=frontend /app/public/build ./public/build
 COPY . .
+# Copy Vite build after the app tree so it is never overwritten by an empty host public/build.
+COPY --from=frontend /app/public/build ./public/build
 
 RUN mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache public \
