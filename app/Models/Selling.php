@@ -60,4 +60,13 @@ class Selling extends Model
     {
         return $this->hasMany(SellingLine::class, 'selling_record_id');
     }
+
+    public function total(): float
+    {
+        $this->loadMissing('lines');
+
+        return round((float) $this->lines->sum(
+            fn (SellingLine $line): float => (float) $line->quantity * (float) $line->unit_price,
+        ), 2);
+    }
 }

@@ -16,6 +16,10 @@ use Illuminate\Validation\ValidationException;
 
 class StockDocumentService
 {
+    public function __construct(
+        private readonly CashService $cash,
+    ) {}
+
     public function confirmPurchase(Purchase $purchase): Purchase
     {
         return $this->transitionPurchase($purchase, PurchaseStatus::APPROVED);
@@ -87,7 +91,13 @@ class StockDocumentService
             $purchase->status = $toStatus;
             $purchase->save();
 
-            return $purchase->fresh(['lines.product', 'status', 'user']);
+            $fresh = $purchase->fresh(['lines.product', 'status', 'user', 'expenses', 'currency']);
+
+            if ($toStatus === PurchaseStatus::PAID && $fresh) {
+                $this->cash->recordPurchaseExpense($fresh);
+            }
+
+            return $fresh;
         });
     }
 
@@ -130,7 +140,17 @@ class StockDocumentService
             $selling->status = $toStatus;
             $selling->save();
 
-            return $selling->fresh(['lines.product', 'user']);
+            $fresh = $selling->fresh(['lines.product', 'user']);
+
+            if ($toStatus === StockDocumentStatus::Confirmed && $fresh) {
+                $this->cash->recordSellingIncome($fresh);
+            }
+
+            if ($toStatus === StockDocumentStatus::Cancelled && $fromStatus === StockDocumentStatus::Confirmed && $fresh) {
+                $this->cash->removeForSource($fresh);
+            }
+
+            return $fresh;
         });
     }
 

@@ -16,6 +16,7 @@ class CheckoutService
     public function __construct(
         private readonly CartService $cart,
         private readonly PaymentGateway $payments,
+        private readonly CashService $cash,
     ) {}
 
     /**
@@ -148,7 +149,13 @@ class CheckoutService
                 'payment_reference' => $paymentReference ?: $locked->payment_reference,
             ]);
 
-            return $locked->fresh('items');
+            $paid = $locked->fresh('items');
+
+            if ($paid) {
+                $this->cash->recordOrderIncome($paid);
+            }
+
+            return $paid;
         });
     }
 
