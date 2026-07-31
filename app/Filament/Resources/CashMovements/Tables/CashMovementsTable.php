@@ -16,6 +16,7 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\RepeatableEntry\TableColumn;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Support\Enums\Width;
@@ -154,7 +155,9 @@ class CashMovementsTable
 
         return [
             Section::make('Venta')
-                ->columns(2)
+                ->columns([
+                    'default' => 2,
+                ])
                 ->schema([
                     TextEntry::make('selling_id')
                         ->label('Nº venta')
@@ -188,19 +191,26 @@ class CashMovementsTable
                     RepeatableEntry::make('lines')
                         ->label('')
                         ->state($selling->lines)
+                        ->table([
+                            TableColumn::make('Producto'),
+                            TableColumn::make('Talla'),
+                            TableColumn::make('Lote'),
+                            TableColumn::make('Estado'),
+                            TableColumn::make('Cantidad'),
+                            TableColumn::make('Precio unitario'),
+                        ])
                         ->schema([
                             TextEntry::make('product_display')
-                                ->label('Producto')
+                                ->hiddenLabel()
                                 ->state(fn (SellingLine $record): string => $record->product?->displayName() ?? '—'),
-                            TextEntry::make('size.name')->label('Talla')->placeholder('—'),
-                            TextEntry::make('lotLine.lot.lot_number')->label('Lote')->placeholder('—'),
+                            TextEntry::make('size.name')->hiddenLabel()->placeholder('—'),
+                            TextEntry::make('lotLine.lot.lot_number')->hiddenLabel()->placeholder('—'),
                             TextEntry::make('state')
-                                ->label('Estado línea')
+                                ->hiddenLabel()
                                 ->formatStateUsing(fn (SellingLineStatus $state): string => $state->label()),
-                            TextEntry::make('quantity')->label('Cantidad'),
-                            TextEntry::make('unit_price')->label('Precio unitario')->money('PEN'),
-                        ])
-                        ->columns(6),
+                            TextEntry::make('quantity')->hiddenLabel(),
+                            TextEntry::make('unit_price')->hiddenLabel()->money('PEN'),
+                        ]),
                 ]),
         ];
     }
