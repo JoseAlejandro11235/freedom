@@ -47,7 +47,7 @@ class ProductResource extends Resource
      */
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['images']);
+        return parent::getEloquentQuery()->with(['images', 'categories']);
     }
 
     public static function getRelations(): array

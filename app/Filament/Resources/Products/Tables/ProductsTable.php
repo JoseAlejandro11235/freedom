@@ -35,6 +35,11 @@ class ProductsTable
                     ->placeholder('—')
                     ->toggleable(),
                 TextColumn::make('brand.name')->label('Marca')->sortable()->searchable(),
+                TextColumn::make('categories.name')
+                    ->label('Categorías')
+                    ->badge()
+                    ->separator(',')
+                    ->toggleable(),
                 TextColumn::make('selling_price')
                     ->label('Precio de venta')
                     ->money('PEN')
@@ -64,6 +69,12 @@ class ProductsTable
             ])
             ->defaultSort('sort_order')
             ->filters([
+                SelectFilter::make('categories')
+                    ->label('Categoría')
+                    ->relationship('categories', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->multiple(),
                 SelectFilter::make('homepage_section')
                     ->options(HomepageSection::options()),
                 TernaryFilter::make('is_published')->label('Publicado'),

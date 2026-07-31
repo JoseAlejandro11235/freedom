@@ -6,14 +6,15 @@ use App\Enums\HomepageSection;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductImage;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-use Illuminate\Database\Eloquent\Model;
 
 class ProductForm
 {
@@ -44,10 +45,10 @@ class ProductForm
                                     ->createOptionUsing(function (array $data): string {
                                         return Brand::query()->create($data)->id;
                                     }),
-                                Select::make('category_id')
-                                    ->label('Categoría')
+                                Select::make('categories')
+                                    ->label('Categorías')
                                     ->relationship(
-                                        name: 'category',
+                                        name: 'categories',
                                         titleAttribute: 'name',
                                         modifyQueryUsing: fn ($query) => $query->with('father')->orderBy('name'),
                                     )
@@ -56,6 +57,7 @@ class ProductForm
                                             ? "{$record->father->name} → {$record->name}"
                                             : $record->name,
                                     )
+                                    ->multiple()
                                     ->searchable()
                                     ->preload()
                                     ->nullable(),
@@ -112,28 +114,38 @@ class ProductForm
                     Section::make('Imágenes del producto')
                         ->columnSpanFull()
                         ->schema([
-                            FileUpload::make('product_images')
+                            Repeater::make('images')
                                 ->label('Imágenes')
-                                ->disk($disk)
-                                ->directory('products')
-                                ->visibility('public')
-                                ->image()
-                                ->multiple()
-                                ->reorderable()
-                                ->fetchFileInformation(false)
-                                ->preventFilePathTampering(
-                                    allowFilePathUsing: function (string $file, FileUpload $component): bool {
-                                        $record = $component->getRecord();
-
-                                        if (! $record instanceof Model) {
-                                            return false;
-                                        }
-
-                                        return $record->images()->where('path', $file)->exists();
-                                    },
+                                ->relationship(
+                                    modifyQueryUsing: fn ($query) => $query->orderBy('sort_order'),
                                 )
-                                ->maxSize(5120)
-                                ->helperText('La primera imagen se usa en la tienda. Arrastra para reordenar.'),
+                                ->schema([
+                                    FileUpload::make('path')
+                                        ->label('Imagen')
+                                        ->disk($disk)
+                                        ->directory('products')
+                                        ->visibility('public')
+                                        ->image()
+                                        ->required()
+                                        ->fetchFileInformation(false)
+                                        ->preventFilePathTampering(
+                                            allowFilePathUsing: function (string $file, FileUpload $component): bool {
+                                                $record = $component->getRecord();
+
+                                                return $record instanceof ProductImage
+                                                    && $record->path === $file;
+                                            },
+                                        )
+                                        ->maxSize(5120),
+                                ])
+                                ->orderColumn('sort_order')
+                                ->reorderable()
+                                ->reorderableWithButtons()
+                                ->collapsible()
+                                ->itemNumbers()
+                                ->defaultItems(0)
+                                ->addActionLabel('Añadir imagen')
+                                ->helperText('La primera imagen se usa en la tienda. Usa las flechas o arrastra para cambiar el orden.'),
                             Select::make('image_fit')
                                 ->label('Ajuste de imagen')
                                 ->options([

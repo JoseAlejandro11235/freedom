@@ -35,7 +35,7 @@ class CatalogController extends Controller
         }
 
         $query = Product::query()
-            ->with(['brand', 'category', 'images'])
+            ->with(['brand', 'categories', 'images'])
             ->published()
             ->orderBy('sort_order')
             ->orderBy('name');
@@ -52,7 +52,7 @@ class CatalogController extends Controller
                         CatalogSearch::sqlNormalized('name').' LIKE ?',
                         [$like],
                     ))
-                    ->orWhereHas('category', fn ($query) => $query->whereRaw(
+                    ->orWhereHas('categories', fn ($query) => $query->whereRaw(
                         CatalogSearch::sqlNormalized('name').' LIKE ?',
                         [$like],
                     ));
@@ -83,7 +83,10 @@ class CatalogController extends Controller
                     $activeCategory->descendantIds(),
                 );
 
-                $query->whereIn('category_id', $categoryIds);
+                $query->whereHas(
+                    'categories',
+                    fn ($query) => $query->whereIn('categories.id', $categoryIds),
+                );
             }
         }
 

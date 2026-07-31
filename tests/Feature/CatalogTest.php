@@ -119,11 +119,11 @@ class CatalogTest extends TestCase
             'is_published' => true,
         ]);
 
-        Product::factory()->create([
-            'category_id' => $category->id,
+        $faceCream = Product::factory()->create([
             'name' => 'Face Cream',
             'is_published' => true,
         ]);
+        $faceCream->categories()->attach($category->id);
 
         Product::factory()->create([
             'name' => 'Perfume',
@@ -176,11 +176,11 @@ class CatalogTest extends TestCase
             'is_published' => true,
         ]);
 
-        Product::factory()->create([
-            'category_id' => $category->id,
+        $labial = Product::factory()->create([
             'name' => 'Labial',
             'is_published' => true,
         ]);
+        $labial->categories()->attach($category->id);
 
         Product::factory()->create([
             'name' => 'Perfume',
@@ -195,6 +195,40 @@ class CatalogTest extends TestCase
             ->has('products.data', 1)
             ->where('activeCategory.name', 'Maquillaje')
             ->where('products.data.0.name', 'Labial'));
+    }
+
+    public function test_catalog_product_can_belong_to_multiple_categories(): void
+    {
+        $skincare = Category::query()->create([
+            'name' => 'Skincare',
+            'slug' => 'skincare-multi',
+            'is_published' => true,
+        ]);
+        $makeup = Category::query()->create([
+            'name' => 'Maquillaje',
+            'slug' => 'maquillaje-multi',
+            'is_published' => true,
+        ]);
+
+        $product = Product::factory()->create([
+            'name' => 'Tinted Moisturizer',
+            'is_published' => true,
+        ]);
+        $product->categories()->attach([$skincare->id, $makeup->id]);
+
+        $this->get('/catalog?category=skincare-multi')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('catalog')
+                ->has('products.data', 1)
+                ->where('products.data.0.name', 'Tinted Moisturizer'));
+
+        $this->get('/catalog?category=maquillaje-multi')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('catalog')
+                ->has('products.data', 1)
+                ->where('products.data.0.name', 'Tinted Moisturizer'));
     }
 
     public function test_catalog_lists_products_without_brand(): void
