@@ -43,12 +43,10 @@ services:
       LIVEWIRE_TEMPORARY_FILE_UPLOAD_DISK: local
       <<: *s3-env
     volumes:
+      # Named volume only. Never bind-mount ./public/build here — an empty host
+      # folder hides the Vite assets baked into the image (500 ViteManifestNotFound).
+      # For live PHP sync locally, use docker-compose.dev.yml.
       - storage:/var/www/html/storage
-      # Local dev: sync catalog/search changes without a full image rebuild.
-      - ./routes:/var/www/html/routes
-      - ./public/build:/var/www/html/public/build
-      - ./app/Http/Controllers:/var/www/html/app/Http/Controllers
-      - ./app/Support:/var/www/html/app/Support
     depends_on:
       mysql:
         condition: service_started

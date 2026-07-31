@@ -49,6 +49,15 @@ if [ -f /var/www/html/public/hot ]; then
     fi
 fi
 
+if [ ! -f /var/www/html/public/build/manifest.json ]; then
+    echo "WARNING: public/build/manifest.json is missing."
+    echo "The container image should include a Vite build. If you bind-mount ./public/build, remove that mount or run npm run build on the host."
+    if [ "${APP_ENV:-local}" = "production" ]; then
+        echo "ERROR: refusing to start production without Vite assets."
+        exit 1
+    fi
+fi
+
 mkdir -p storage/app/private/livewire-tmp storage/app/public
 chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
 chmod -R ug+rwx storage bootstrap/cache 2>/dev/null || true

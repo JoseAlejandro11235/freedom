@@ -63,6 +63,19 @@ Copy the generated value into `APP_KEY` in `.env`.
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
+Confirm Vite assets exist inside the container (required for the storefront):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec app ls -la public/build/manifest.json
+```
+
+If that file is missing, the image was overridden by an empty host `public/build` mount, or the image build skipped the frontend stage. Rebuild without bind-mounting `./public/build`:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml build --no-cache app
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d app queue
+```
+
 Create the MinIO bucket once:
 
 ```bash
