@@ -191,6 +191,7 @@ class CashMovementsTable
                     RepeatableEntry::make('lines')
                         ->label('')
                         ->state($selling->lines)
+                        ->extraAttributes(['class' => 'fi-force-table-layout'])
                         ->table([
                             TableColumn::make('Producto'),
                             TableColumn::make('Talla'),

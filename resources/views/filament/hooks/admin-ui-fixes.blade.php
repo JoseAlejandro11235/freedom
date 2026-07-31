@@ -33,4 +33,51 @@
         background-color: rgb(249 250 251) !important;
         color: rgb(3 7 18) !important;
     }
+
+    /*
+     * Keep RepeatableEntry table layout on mobile (Filament stacks cells by default).
+     * Horizontal scroll handles narrow viewports.
+     */
+    .fi-in-table-repeatable.fi-force-table-layout {
+        display: block !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .fi-in-table-repeatable.fi-force-table-layout > table {
+        display: table !important;
+        width: 100%;
+        min-width: 36rem;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .fi-in-table-repeatable.fi-force-table-layout > table > thead {
+        display: table-header-group !important;
+    }
+
+    .fi-in-table-repeatable.fi-force-table-layout > table > tbody {
+        display: table-row-group !important;
+    }
+
+    .fi-in-table-repeatable.fi-force-table-layout > table > tbody > tr {
+        display: table-row !important;
+        padding: 0 !important;
+        gap: 0 !important;
+    }
+
+    .fi-in-table-repeatable.fi-force-table-layout > table > tbody > tr > td {
+        display: table-cell !important;
+        padding: 0.5rem 0.75rem !important;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    .fi-in-table-repeatable.fi-force-table-layout > table > thead > tr > th {
+        white-space: nowrap;
+    }
+
+    .fi-in-table-repeatable.fi-force-table-layout .fi-in-entry-label {
+        display: none !important;
+    }
 </style>
