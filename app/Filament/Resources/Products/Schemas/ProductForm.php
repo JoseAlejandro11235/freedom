@@ -6,7 +6,7 @@ use App\Enums\HomepageSection;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
-use App\Models\ProductImage;
+use Filament\Forms\Components\BaseFileUpload;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -126,17 +126,43 @@ class ProductForm
                                         ->directory('products')
                                         ->visibility('public')
                                         ->image()
+                                        ->imagePreviewHeight('200')
+                                        ->acceptedFileTypes([
+                                            'image/jpeg',
+                                            'image/jpg',
+                                            'image/png',
+                                            'image/webp',
+                                            'image/gif',
+                                        ])
                                         ->required()
+                                        // Avoid S3 exists()/mimeType() round-trips; set type from extension so
+                                        // FilePond can preview .jpg/.jpeg correctly.
                                         ->fetchFileInformation(false)
-                                        ->preventFilePathTampering(
-                                            allowFilePathUsing: function (string $file, FileUpload $component): bool {
-                                                $record = $component->getRecord();
+                                        ->getUploadedFileUsing(function (BaseFileUpload $component, string $file, string | array | null $storedFileNames): ?array {
+                                            $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+                                            $type = match ($extension) {
+                                                'jpg', 'jpeg' => 'image/jpeg',
+                                                'png' => 'image/png',
+                                                'webp' => 'image/webp',
+                                                'gif' => 'image/gif',
+                                                default => 'image/jpeg',
+                                            };
 
-                                                return $record instanceof ProductImage
-                                                    && $record->path === $file;
+                                            return [
+                                                'name' => is_array($storedFileNames)
+                                                    ? ($storedFileNames[$file] ?? basename($file))
+                                                    : ($storedFileNames ?? basename($file)),
+                                                'size' => 0,
+                                                'type' => $type,
+                                                'url' => $component->getDisk()->url($file),
+                                            ];
+                                        })
+                                        ->preventFilePathTampering(
+                                            allowFilePathUsing: function (string $file): bool {
+                                                return str_starts_with($file, 'products/');
                                             },
                                         )
-                                        ->maxSize(5120),
+                                        ->maxSize(10240),
                                 ])
                                 ->orderColumn('sort_order')
                                 ->reorderable()

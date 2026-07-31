@@ -2,7 +2,10 @@
     encode zstd gzip
 
     handle /{$AWS_BUCKET}/* {
-        reverse_proxy minio:9000
+        reverse_proxy minio:9000 {
+            # MinIO may emit HSTS; strip it so HTTP IP deploys don't break <img> loads in browsers.
+            header_down -Strict-Transport-Security
+        }
     }
 
     handle {

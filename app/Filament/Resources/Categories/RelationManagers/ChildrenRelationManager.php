@@ -7,6 +7,7 @@ use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\BaseFileUpload;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -42,9 +43,38 @@ class ChildrenRelationManager extends RelationManager
                     ->directory('sections')
                     ->visibility('public')
                     ->image()
+                    ->imagePreviewHeight('200')
+                    ->acceptedFileTypes([
+                        'image/jpeg',
+                        'image/jpg',
+                        'image/png',
+                        'image/webp',
+                        'image/gif',
+                    ])
                     ->fetchFileInformation(false)
-                    ->preventFilePathTampering()
-                    ->maxSize(5120),
+                    ->getUploadedFileUsing(function (BaseFileUpload $component, string $file, string | array | null $storedFileNames): ?array {
+                        $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+                        $type = match ($extension) {
+                            'jpg', 'jpeg' => 'image/jpeg',
+                            'png' => 'image/png',
+                            'webp' => 'image/webp',
+                            'gif' => 'image/gif',
+                            default => 'image/jpeg',
+                        };
+
+                        return [
+                            'name' => is_array($storedFileNames)
+                                ? ($storedFileNames[$file] ?? basename($file))
+                                : ($storedFileNames ?? basename($file)),
+                            'size' => 0,
+                            'type' => $type,
+                            'url' => $component->getDisk()->url($file),
+                        ];
+                    })
+                    ->preventFilePathTampering(
+                        allowFilePathUsing: fn (string $file): bool => str_starts_with($file, 'sections/'),
+                    )
+                    ->maxSize(10240),
                 TextInput::make('sort_order')
                     ->label('Orden')
                     ->numeric()
