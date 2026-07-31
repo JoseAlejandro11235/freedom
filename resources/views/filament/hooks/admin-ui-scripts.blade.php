@@ -1,6 +1,6 @@
 <script>
     (function () {
-        const FIX_VERSION = '3';
+        const FIX_VERSION = '4';
 
         function clearLivewireErrorModal() {
             const modal = document.getElementById('livewire-error');
@@ -17,23 +17,15 @@
 
             modal.remove();
             document.body.style.removeProperty('overflow');
+            document.body.style.removeProperty('pointer-events');
         }
 
-        function applyFreedomAdminUiFix() {
+        function forceLightTheme() {
             document.documentElement.classList.remove('dark');
             localStorage.setItem('theme', 'light');
-            localStorage.setItem('isOpen', 'false');
-            localStorage.setItem('isOpenDesktop', 'true');
+        }
 
-            document.querySelectorAll('.fi-sidebar-close-overlay').forEach((el) => {
-                el.style.setProperty('display', 'none', 'important');
-                el.style.setProperty('pointer-events', 'none', 'important');
-            });
-
-            if (window.Alpine?.store('sidebar')) {
-                window.Alpine.store('sidebar').isOpen = false;
-            }
-
+        function clearStuckModalOverlays() {
             document.querySelectorAll('.fi-modal').forEach((modal) => {
                 if (! modal.classList.contains('fi-modal-open')) {
                     modal.querySelectorAll('.fi-modal-close-overlay').forEach((overlay) => {
@@ -41,8 +33,6 @@
                     });
                 }
             });
-
-            clearLivewireErrorModal();
         }
 
         function registerLivewireSessionRecovery() {
@@ -65,6 +55,8 @@
             });
         }
 
+        // One-time migration of old admin UI fix state. Do not keep forcing the
+        // sidebar closed — that made the mobile menu open and instantly close.
         if (localStorage.getItem('freedom-admin-ui-fix') !== FIX_VERSION) {
             Object.keys(localStorage).forEach((key) => {
                 if (
@@ -79,25 +71,22 @@
             });
 
             localStorage.setItem('freedom-admin-ui-fix', FIX_VERSION);
+            localStorage.setItem('theme', 'light');
+            // Mobile should start closed; desktop Filament manages its own state.
             localStorage.setItem('isOpen', 'false');
             localStorage.setItem('isOpenDesktop', 'true');
-            localStorage.setItem('theme', 'light');
         }
 
-        applyFreedomAdminUiFix();
+        forceLightTheme();
+        clearStuckModalOverlays();
+        clearLivewireErrorModal();
 
-        document.addEventListener('alpine:init', applyFreedomAdminUiFix);
-        document.addEventListener('alpine:initialized', applyFreedomAdminUiFix);
+        document.addEventListener('alpine:init', forceLightTheme);
         document.addEventListener('livewire:init', registerLivewireSessionRecovery);
-        document.addEventListener('livewire:navigated', applyFreedomAdminUiFix);
-
-        let unblockTimer = null;
-        const scheduleUnblock = () => {
-            clearTimeout(unblockTimer);
-            unblockTimer = setTimeout(applyFreedomAdminUiFix, 50);
-        };
-
-        const observer = new MutationObserver(scheduleUnblock);
-        observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true });
+        document.addEventListener('livewire:navigated', () => {
+            forceLightTheme();
+            clearStuckModalOverlays();
+            clearLivewireErrorModal();
+        });
     })();
 </script>

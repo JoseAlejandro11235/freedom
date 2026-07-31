@@ -5,13 +5,6 @@
         opacity: 1 !important;
     }
 
-    /* Blocker: mobile sidebar veil (gray-950/50) can stick over the table. */
-    html.fi .fi-sidebar-close-overlay {
-        display: none !important;
-        pointer-events: none !important;
-        opacity: 0 !important;
-    }
-
     /* Only show modal veil when a modal is actually open. */
     html.fi .fi-modal:not(.fi-modal-open) .fi-modal-close-overlay {
         display: none !important;
@@ -28,13 +21,6 @@
         pointer-events: none !important;
         background: transparent !important;
         opacity: 0 !important;
-    }
-
-    html.fi body,
-    html.fi .fi-layout,
-    html.fi .fi-main-ctn,
-    html.fi .fi-main {
-        pointer-events: auto !important;
     }
 
     /* Force light panel (dark mode is disabled). */
