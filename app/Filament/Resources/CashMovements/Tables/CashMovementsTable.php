@@ -4,12 +4,21 @@ namespace App\Filament\Resources\CashMovements\Tables;
 
 use App\Enums\CashMovementSource;
 use App\Enums\CashMovementType;
+use App\Enums\SellingLineStatus;
+use App\Enums\StockDocumentStatus;
 use App\Models\CashMovement;
+use App\Models\Selling;
+use App\Models\SellingLine;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Section;
+use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -94,6 +103,12 @@ class CashMovementsTable
                     }),
             ])
             ->recordActions([
+                ViewAction::make()
+                    ->label('Ver venta')
+                    ->modalHeading(fn (CashMovement $record): string => 'Detalle de venta '.($record->meta['selling_id'] ?? ''))
+                    ->modalWidth(Width::FourExtraLarge)
+                    ->visible(fn (CashMovement $record): bool => $record->source === CashMovementSource::Selling)
+                    ->schema(fn (CashMovement $record): array => static::sellingDetailSchema($record)),
                 EditAction::make()
                     ->visible(fn (CashMovement $record): bool => $record->isManual()),
                 DeleteAction::make()
@@ -109,5 +124,84 @@ class CashMovementsTable
                         }),
                 ]),
             ]);
+    }
+
+    /**
+     * @return array<int, Section>
+     */
+    private static function sellingDetailSchema(CashMovement $record): array
+    {
+        $selling = $record->sourceable;
+
+        if (! $selling instanceof Selling) {
+            return [
+                Section::make('Venta')
+                    ->schema([
+                        TextEntry::make('missing')
+                            ->label('')
+                            ->state('No se encontró la venta asociada.'),
+                    ]),
+            ];
+        }
+
+        $selling->loadMissing([
+            'customer.persona',
+            'user',
+            'lines.product',
+            'lines.size',
+            'lines.lotLine.lot',
+        ]);
+
+        return [
+            Section::make('Venta')
+                ->columns(2)
+                ->schema([
+                    TextEntry::make('selling_id')
+                        ->label('Nº venta')
+                        ->state($selling->selling_id),
+                    TextEntry::make('customer_display')
+                        ->label('Cliente')
+                        ->state($selling->customer?->displayName() ?? '—'),
+                    TextEntry::make('status')
+                        ->label('Estado')
+                        ->badge()
+                        ->state($selling->status)
+                        ->formatStateUsing(fn (StockDocumentStatus $state): string => $state->label())
+                        ->color(fn (StockDocumentStatus $state): string => $state->color()),
+                    TextEntry::make('user_name')
+                        ->label('Usuario')
+                        ->state($selling->user?->name ?? '—'),
+                    TextEntry::make('created_at')
+                        ->label('Creado')
+                        ->state($selling->created_at?->format('d/m/Y H:i') ?? '—'),
+                    TextEntry::make('total')
+                        ->label('Total')
+                        ->state('S/ '.number_format($selling->total(), 2))
+                        ->weight('bold'),
+                    TextEntry::make('note')
+                        ->label('Nota')
+                        ->state($selling->note ?: '—')
+                        ->columnSpanFull(),
+                ]),
+            Section::make('Líneas')
+                ->schema([
+                    RepeatableEntry::make('lines')
+                        ->label('')
+                        ->state($selling->lines)
+                        ->schema([
+                            TextEntry::make('product_display')
+                                ->label('Producto')
+                                ->state(fn (SellingLine $record): string => $record->product?->displayName() ?? '—'),
+                            TextEntry::make('size.name')->label('Talla')->placeholder('—'),
+                            TextEntry::make('lotLine.lot.lot_number')->label('Lote')->placeholder('—'),
+                            TextEntry::make('state')
+                                ->label('Estado línea')
+                                ->formatStateUsing(fn (SellingLineStatus $state): string => $state->label()),
+                            TextEntry::make('quantity')->label('Cantidad'),
+                            TextEntry::make('unit_price')->label('Precio unitario')->money('PEN'),
+                        ])
+                        ->columns(6),
+                ]),
+        ];
     }
 }
