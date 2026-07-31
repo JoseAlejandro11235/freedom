@@ -6,7 +6,7 @@ import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -71,8 +71,18 @@ const SidebarProvider = React.forwardRef<
     );
 
     // Helper to toggle the sidebar.
+    // Prefer the live viewport width so the first tap on mobile opens the sheet
+    // even if React state briefly lags behind a resize/hydration edge case.
     const toggleSidebar = React.useCallback(() => {
-        return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open);
+        const mobileViewport = typeof window !== 'undefined' && window.innerWidth < 768;
+
+        if (mobileViewport || isMobile) {
+            setOpenMobile((open) => !open);
+
+            return;
+        }
+
+        setOpen((open) => !open);
     }, [isMobile, setOpen, setOpenMobile]);
 
     // Listen for mobile navigation events
@@ -160,11 +170,11 @@ const Sidebar = React.forwardRef<
 
     if (isMobile) {
         return (
-            <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
+            <Sheet open={openMobile} onOpenChange={setOpenMobile}>
                 <SheetContent
                     data-sidebar="sidebar"
                     data-mobile="true"
-                    className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+                    className="z-[100] w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
                     style={
                         {
                             '--sidebar-width': SIDEBAR_WIDTH_MOBILE,
@@ -173,6 +183,7 @@ const Sidebar = React.forwardRef<
                     side={side}
                 >
                     <SheetTitle className="sr-only">Sidebar Navigation</SheetTitle>
+                    <SheetDescription className="sr-only">Dashboard navigation menu</SheetDescription>
                     <div className="flex h-full w-full flex-col">{children}</div>
                 </SheetContent>
             </Sheet>
